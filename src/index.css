@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-cream-100 text-stone-900 antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .section-label {
+    @apply inline-flex items-center gap-2 text-xs font-semibold tracking-extra-wide uppercase text-sky-600;
+  }
+  .section-label::before {
+    content: '';
+    @apply w-6 h-px bg-sky-400;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .bg-gradient-radial {
+    background-image: radial-gradient(var(--tw-gradient-stops));
+  }
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-lg shadow-stone-900/5;
+  }
+  .glass-dark {
+    @apply bg-stone-900/60 backdrop-blur-xl border border-white/10 shadow-xl shadow-stone-900/20;
+  }
+  .gradient-orb {
+    @apply absolute rounded-full bg-gradient-radial blur-3xl pointer-events-none -z-10;
+  }
+  .phone-shadow {
+    box-shadow: 0 24px 60px -12px rgba(28, 25, 23, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+  }
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-stone-900 via-stone-800 to-saarathi-600;
+  }
+  .bg-sky-nature {
+    background: linear-gradient(180deg, #F0F9FF 0%, #E0F7FA 35%, #FAF9F6 100%);
+  }
+  .bg-sky-nature::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(186, 230, 253, 0.5) 0%, transparent 40%),
+      radial-gradient(circle at 80% 20%, rgba(125, 211, 252, 0.25) 0%, transparent 35%),
+      radial-gradient(circle at 60% 80%, rgba(122, 158, 126, 0.08) 0%, transparent 40%);
+    pointer-events: none;
+    z-index: -1;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@layer base {
+  ::selection {
+    @apply bg-saarathi-100 text-stone-900;
+  }
+}
