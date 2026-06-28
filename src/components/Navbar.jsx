@@ -33,7 +33,7 @@ export default function Navbar() {
         <a href="/" className="flex items-center gap-3 group">
           <img
             src="/logo.svg"
-            alt="Sarthi"
+            alt="Sarathi"
             className={`w-auto transition-all duration-500 ease-out group-hover:scale-105 ${
               scrolled ? 'h-9' : 'h-14'
             }`}
@@ -41,7 +41,7 @@ export default function Navbar() {
           <span className={`font-display font-bold tracking-tight transition-all duration-500 ${
             scrolled ? 'text-lg text-white' : 'text-2xl text-stone-900'
           }`}>
-            Sarthi
+            Sarathi
           </span>
         </a>
 

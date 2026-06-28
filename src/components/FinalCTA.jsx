@@ -29,7 +29,7 @@ export default function FinalCTA() {
               Be among the first families.
             </h2>
             <p className="text-sm sm:text-base md:text-lg text-white/90 max-w-2xl mx-auto mb-8 md:mb-10 leading-relaxed drop-shadow-sm">
-              We are opening Sarthi to a small number of families first. Join the waitlist and we will reach out personally — no automated sequences, no sales calls. Just a conversation.
+              We are opening Sarathi to a small number of families first. Join the waitlist and we will reach out personally — no automated sequences, no sales calls. Just a conversation.
             </p>
 
             <form

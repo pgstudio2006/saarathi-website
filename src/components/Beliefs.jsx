@@ -45,7 +45,7 @@ export default function Beliefs() {
             What we know to be true.
           </h2>
           <p className="text-base sm:text-lg md:text-xl text-slate-600 leading-relaxed max-w-2xl">
-            Sarthi was not built around technology. It was built around a family. These are the principles that guide everything we make.
+            Sarathi was not built around technology. It was built around a family. These are the principles that guide everything we make.
           </p>
         </div>
 

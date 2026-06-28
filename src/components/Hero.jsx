@@ -14,7 +14,7 @@ export default function Hero() {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
           <div className="order-2 lg:order-1 animate-fade-up">
             <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-slate-900 text-balance mb-6 leading-[1.05]">
-              Meet Sarthi.<br />
+              Meet Sarathi.<br />
               <span className="bg-gradient-to-r from-sky-600 to-sky-400 bg-clip-text text-transparent font-medium">
                 Every small moment matters.
               </span>

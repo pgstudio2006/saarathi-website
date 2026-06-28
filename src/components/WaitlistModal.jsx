@@ -46,8 +46,8 @@ export default function WaitlistModal() {
         </button>
 
         <div className="flex items-center justify-center gap-2 mb-6">
-          <img src="/logo.svg" alt="Sarthi" className="h-9 w-auto" />
-          <span className="font-display text-xl font-bold tracking-tight text-slate-900">Sarthi</span>
+          <img src="/logo.svg" alt="Sarathi" className="h-9 w-auto" />
+          <span className="font-display text-xl font-bold tracking-tight text-slate-900">Sarathi</span>
         </div>
 
         <div className="relative flex items-center justify-center gap-2 sm:gap-3 mb-7 h-40 sm:h-44 perspective-[1200px]">
@@ -66,7 +66,7 @@ export default function WaitlistModal() {
           Join the waitlist
         </h2>
         <p className="text-sm text-center text-slate-500 mb-6 text-balance">
-          Be the first to know when Sarthi launches.
+          Be the first to know when Sarathi launches.
         </p>
 
         {submitted ? (

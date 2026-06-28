@@ -26,11 +26,11 @@ export default function Footer() {
         <div className="grid md:grid-cols-12 gap-8 md:gap-12 mb-12 md:mb-16">
           <div className="md:col-span-6">
             <div className="flex items-center gap-3 mb-6">
-              <img src="/logo.svg" alt="Sarthi" className="h-11 w-auto" />
-              <span className="font-display text-2xl font-bold text-slate-900">Sarthi</span>
+              <img src="/logo.svg" alt="Sarathi" className="h-11 w-auto" />
+              <span className="font-display text-2xl font-bold text-slate-900">Sarathi</span>
             </div>
             <p className="text-slate-700 leading-relaxed max-w-md text-base sm:text-lg">
-              Your guide. Your companion. Your Sarthi.
+              Your guide. Your companion. Your Sarathi.
             </p>
             <p className="text-slate-500 mt-4 text-sm max-w-md">
               Built for parents of autistic children — so every small moment finds its meaning.
@@ -62,7 +62,7 @@ export default function Footer() {
 
         <div className="pt-8 border-t border-sky-100 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-slate-400">
-            © 2025 Sarthi. All rights reserved.
+            © 2025 Sarathi. All rights reserved.
           </p>
           <p className="text-sm text-slate-400">
             Built with care, for the families who need it most.

@@ -52,7 +52,7 @@ function InlineCTA() {
           Coming soon
         </p>
         <h3 className="font-display text-2xl md:text-3xl font-bold text-white leading-snug mb-3 drop-shadow-sm">
-          Be the first to know when Sarthi is ready.
+          Be the first to know when Sarathi is ready.
         </h3>
         <p className="text-white/90 text-sm max-w-xl mx-auto mb-7 drop-shadow-sm">
           We are building something for parents exactly like you — so no observation, no breakthrough,
@@ -117,7 +117,7 @@ export default function ArticlePage() {
           <span className="w-1 h-1 rounded-full bg-slate-300" />
           <span>{article.date}</span>
           <span className="w-1 h-1 rounded-full bg-slate-300" />
-          <span>Sarthi Awareness</span>
+          <span>Sarathi Awareness</span>
         </div>
 
         <Infographic />
