@@ -17,8 +17,18 @@ function ScrollToTop() {
 
 function App() {
   const [modalOpen, setModalOpen] = useState(false)
-  const openModal = () => setModalOpen(true)
+  const [hasOpened, setHasOpened] = useState(false)
+  const openModal = () => { setModalOpen(true); setHasOpened(true) }
   const closeModal = () => setModalOpen(false)
+
+  useEffect(() => {
+    if (hasOpened) return
+    const timer = setTimeout(() => {
+      setModalOpen(true)
+      setHasOpened(true)
+    }, 15000)
+    return () => clearTimeout(timer)
+  }, [hasOpened])
 
   return (
     <BrowserRouter>
