@@ -1,9 +1,29 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { articles } from '../data/articles'
+import { submitWaitlist } from '../utils/submitWaitlist'
 
 function InlineForm({ formId, successId }) {
+  const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!email) return
+    setLoading(true)
+    setError('')
+    const result = await submitWaitlist(email)
+    setLoading(false)
+    if (result.ok) {
+      setSubmitted(true)
+      setEmail('')
+    } else {
+      setError(result.error || 'Something went wrong. Please try again.')
+    }
+  }
+
   if (submitted) {
     return (
       <div className="form-success visible" id={successId} aria-live="polite">
@@ -17,11 +37,12 @@ function InlineForm({ formId, successId }) {
   }
   return (
     <div id={formId}>
-      <form className="hero__form-row" onSubmit={(e) => { e.preventDefault(); setSubmitted(true) }}>
+      <form className="hero__form-row" onSubmit={handleSubmit}>
         <label htmlFor={`${formId}-email`} className="sr-only">Your email address</label>
-        <input type="email" id={`${formId}-email`} className="field-input" placeholder="Your email address" autoComplete="email" required />
-        <button type="submit" className="btn btn-primary">Join Waitlist</button>
+        <input type="email" id={`${formId}-email`} className="field-input" placeholder="Your email address" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Joining...' : 'Join Waitlist'}</button>
       </form>
+      {error && <p className="form-error" role="alert">{error}</p>}
       <div className="form-trust">
         <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
           <path d="M8 1.5L2 4v3.5c0 3.3 2.6 6.4 6 7 3.4-.6 6-3.7 6-7V4L8 1.5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />

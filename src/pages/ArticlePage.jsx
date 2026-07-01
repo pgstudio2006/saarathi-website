@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Navigate, useNavigate } from 'react-router-dom'
 import { getArticle, getRelated } from '../data/articles'
+import { submitWaitlist } from '../utils/submitWaitlist'
 
 function AudioPlayer({ title, duration }) {
   const [isPlaying, setIsPlaying] = useState(false)
@@ -149,7 +150,26 @@ function Infographic({ color, bg }) {
 }
 
 function ArticleWaitlist() {
+  const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!email) return
+    setLoading(true)
+    setError('')
+    const result = await submitWaitlist(email)
+    setLoading(false)
+    if (result.ok) {
+      setSubmitted(true)
+      setEmail('')
+    } else {
+      setError(result.error || 'Something went wrong. Please try again.')
+    }
+  }
+
   if (submitted) {
     return (
       <div className="article-waitlist">
@@ -167,11 +187,12 @@ function ArticleWaitlist() {
     <div className="article-waitlist">
       <h2 className="article-waitlist__title">Be among the first families.</h2>
       <p className="article-waitlist__body">Saarathi is opening to a small number of families first. Join the waitlist and we will reach out when it is your turn.</p>
-      <form className="wl-form" onSubmit={(e) => { e.preventDefault(); setSubmitted(true) }}>
+      <form className="wl-form" onSubmit={handleSubmit}>
         <label htmlFor="articleWlemail" className="sr-only">Email address</label>
-        <input type="email" id="articleWlemail" className="field-input" placeholder="Your email address" autoComplete="email" required />
-        <button type="submit" className="btn btn-primary">Join Waitlist</button>
+        <input type="email" id="articleWlemail" className="field-input" placeholder="Your email address" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Joining...' : 'Join Waitlist'}</button>
       </form>
+      {error && <p className="form-error" role="alert">{error}</p>}
     </div>
   )
 }

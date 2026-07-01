@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
+import { submitWaitlist } from '../utils/submitWaitlist'
 
 export default function WaitlistModal({ isOpen, onClose }) {
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const inputRef = useRef(null)
 
   useEffect(() => {
@@ -14,6 +17,8 @@ export default function WaitlistModal({ isOpen, onClose }) {
     if (isOpen) {
       setSubmitted(false)
       setEmail('')
+      setError('')
+      setLoading(false)
       setTimeout(() => inputRef.current?.focus(), 280)
     }
   }, [isOpen])
@@ -24,11 +29,19 @@ export default function WaitlistModal({ isOpen, onClose }) {
     return () => document.removeEventListener('keydown', handleKey)
   }, [isOpen, onClose])
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!email) return
-    setSubmitted(true)
-    setEmail('')
+    setLoading(true)
+    setError('')
+    const result = await submitWaitlist(email)
+    setLoading(false)
+    if (result.ok) {
+      setSubmitted(true)
+      setEmail('')
+    } else {
+      setError(result.error || 'Something went wrong. Please try again.')
+    }
   }
 
   if (!isOpen) return null
@@ -54,9 +67,10 @@ export default function WaitlistModal({ isOpen, onClose }) {
             <p className="modal__body">Be among the first families to experience Saarathi. We will reach out personally — no automated emails, no sales calls.</p>
             <form className="modal__form" onSubmit={handleSubmit}>
               <label htmlFor="modalEmail" className="sr-only">Your email address</label>
-              <input type="email" id="modalEmail" ref={inputRef} className="field-input" placeholder="Your email address" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              <button type="submit" className="btn btn-primary btn-block">Join Waitlist</button>
+              <input type="email" id="modalEmail" ref={inputRef} className="field-input" placeholder="Your email address" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loading} />
+              <button type="submit" className="btn btn-primary btn-block" disabled={loading}>{loading ? 'Joining...' : 'Join Waitlist'}</button>
             </form>
+            {error && <p className="form-error" role="alert" style={{ marginTop: '0.75rem' }}>{error}</p>}
             <div className="modal__trust">
               <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <path d="M8 1.5L2 4v3.5c0 3.3 2.6 6.4 6 7 3.4-.6 6-3.7 6-7V4L8 1.5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
