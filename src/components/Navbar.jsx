@@ -1,128 +1,95 @@
 import { useState, useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 const navLinks = [
   { name: 'The Reality', href: '/#reality' },
-  { name: 'Our Belief', href: '/#belief' },
-  { name: 'Awareness', href: '/#awareness' },
-  { name: 'Join Waitlist', href: '/#waitlist' },
+  { name: 'Our Belief', href: '/#vision' },
+  { name: 'Awareness', href: '/awareness' },
 ]
 
-export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false)
+export default function Navbar({ openModal }) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const location = useLocation()
+  const navigate = useNavigate()
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [mobileOpen])
+
+  const handleNav = (href) => {
+    if (href.startsWith('/#')) {
+      if (location.pathname !== '/') {
+        navigate('/' + href)
+      } else {
+        const id = href.slice(2)
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+      }
+    } else {
+      navigate(href)
+    }
+    setMobileOpen(false)
+  }
+
   return (
-    <header
-      className={`fixed left-0 right-0 z-50 transition-all duration-500 ease-out ${
-        scrolled ? 'top-4 px-4' : 'top-0 px-0'
-      }`}
-    >
-      <div
-        className={`mx-auto flex items-center justify-between transition-all duration-500 ease-out ${
-          scrolled
-            ? 'max-w-3xl px-5 h-14 rounded-full bg-stone-900/90 backdrop-blur-xl shadow-lg shadow-stone-900/20 border border-white/10'
-            : 'max-w-7xl px-6 h-24 bg-transparent'
-        }`}
-      >
-        <a href="/" className="flex items-center gap-3 group">
-          <img
-            src="/logo.svg"
-            alt="Sarathi"
-            className={`w-auto transition-all duration-500 ease-out group-hover:scale-105 ${
-              scrolled ? 'h-9' : 'h-14'
-            }`}
-          />
-          <span className={`font-display font-bold tracking-tight transition-all duration-500 ${
-            scrolled ? 'text-lg text-white' : 'text-2xl text-stone-900'
-          }`}>
-            Sarathi
-          </span>
-        </a>
+    <>
+      <header className={`nav ${scrolled ? 'scrolled' : ''}`} role="banner">
+        <div className="wrap">
+          <div className="nav__row">
+            <button className="logo" aria-label="Saarathi home" onClick={() => handleNav('/')}>
+              <div className="logo__mark" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none">
+                  <path d="M10 3C10 3 6 5.8 6 9.5C6 11.6 7.6 13.2 10 14C12.4 13.2 14 11.6 14 9.5C14 5.8 10 3 10 3Z" fill="white" fillOpacity=".92" />
+                  <circle cx="10" cy="16.5" r="1.4" fill="white" fillOpacity=".55" />
+                </svg>
+              </div>
+              <span className="logo__name">Saarathi<span>.</span></span>
+            </button>
 
-        <nav className={`hidden md:flex items-center transition-all duration-500 ${
-          scrolled ? 'gap-7' : 'gap-9'
-        }`}>
-          {navLinks.map((link) => (
-            <a
-              key={link.name}
-              href={link.href}
-              className={`group/link relative overflow-hidden inline-block text-base font-medium transition-colors ${
-                scrolled
-                  ? 'text-cream-200/80 hover:text-white'
-                  : 'text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              <span className="block transition-transform duration-300 ease-out group-hover/link:-translate-y-full">
-                {link.name}
-              </span>
-              <span className="absolute inset-0 block translate-y-full transition-transform duration-300 ease-out group-hover/link:translate-y-0">
-                {link.name}
-              </span>
-            </a>
-          ))}
-        </nav>
-
-        <a
-          href="/#waitlist"
-          className={`group/cta hidden md:inline-flex items-center justify-center overflow-hidden font-semibold rounded-full transition-all hover:-translate-y-0.5 ${
-            scrolled
-              ? 'px-5 py-2 text-sm bg-white text-stone-900 hover:bg-cream-100'
-              : 'px-6 py-2.5 text-base bg-stone-900 text-white hover:bg-stone-800'
-          }`}
-        >
-          <span className="relative block overflow-hidden">
-            <span className="block transition-transform duration-300 ease-out group-hover/cta:-translate-y-full">
-              Join Waitlist
-            </span>
-            <span className="absolute inset-0 block translate-y-full transition-transform duration-300 ease-out group-hover/cta:translate-y-0">
-              Join Waitlist
-            </span>
-          </span>
-        </a>
-
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className={`md:hidden p-2 -mr-2 transition-colors ${scrolled ? 'text-white' : 'text-stone-700'}`}
-          aria-label="Toggle menu"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            {mobileOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
-        </button>
-      </div>
-
-      {mobileOpen && (
-        <>
-          <div
-            className="md:hidden fixed inset-0 top-0 z-[-1]"
-            onClick={() => setMobileOpen(false)}
-          />
-          <div className={`md:hidden mx-4 mt-2 bg-stone-900/95 backdrop-blur-xl rounded-2xl shadow-lg shadow-stone-900/20 border border-white/10 px-5 py-5 ${scrolled ? '' : 'mt-0'}`}>
-            <nav className="flex flex-col gap-4">
+            <nav className="nav__links" aria-label="Primary">
               {navLinks.map((link) => (
-                <a
+                <span
                   key={link.name}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="text-base font-medium text-cream-200/90 hover:text-white transition-colors"
+                  className="nav__link"
+                  onClick={() => handleNav(link.href)}
                 >
                   {link.name}
-                </a>
+                </span>
               ))}
             </nav>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
+              <button className="btn btn-primary btn-sm nav__cta" onClick={openModal}>Join Waitlist</button>
+              <button
+                className={`hamburger ${mobileOpen ? 'open' : ''}`}
+                aria-label="Open menu"
+                aria-expanded={mobileOpen}
+                onClick={() => setMobileOpen(!mobileOpen)}
+              >
+                <span></span><span></span><span></span>
+              </button>
+            </div>
           </div>
-        </>
-      )}
-    </header>
+        </div>
+      </header>
+
+      <nav className={`mobile-drawer ${mobileOpen ? 'open' : ''}`} aria-label="Mobile">
+        {navLinks.map((link) => (
+          <button key={link.name} className="drawer-link" onClick={() => handleNav(link.href)}>
+            {link.name}
+          </button>
+        ))}
+        <button className="btn btn-primary btn-block" onClick={() => { setMobileOpen(false); openModal() }}>
+          Join Waitlist
+        </button>
+      </nav>
+    </>
   )
 }

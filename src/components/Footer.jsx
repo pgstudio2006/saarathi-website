@@ -1,72 +1,63 @@
-const footerLinks = [
-  {
-    title: 'Navigate',
-    links: [
-      { name: 'The Reality', href: '/#reality' },
-      { name: 'Our Belief', href: '/#belief' },
-      { name: 'Awareness', href: '/#awareness' },
-      { name: 'Join Waitlist', href: '/#waitlist' },
-    ],
-  },
-  {
-    title: 'More',
-    links: [
-      { name: 'Privacy Policy', href: '#' },
-      { name: 'Terms of Use', href: '#' },
-      { name: 'Contact', href: '#' },
-    ],
-  },
-]
+import { useNavigate, useLocation } from 'react-router-dom'
 
-export default function Footer() {
+export default function Footer({ openModal }) {
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const handleNav = (href) => {
+    if (href === '#waitlist') {
+      openModal()
+      return
+    }
+    if (href.startsWith('/#')) {
+      if (location.pathname !== '/') {
+        navigate('/' + href)
+      } else {
+        const id = href.slice(2)
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+      }
+    } else {
+      navigate(href)
+    }
+  }
+
   return (
-    <footer className="relative bg-gradient-to-b from-white to-sky-50 border-t border-sky-100 text-slate-700 py-12 md:py-20 overflow-hidden">
-      <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-radial from-sky-200/30 to-transparent blur-3xl pointer-events-none" />
-      <div className="relative max-w-7xl mx-auto px-5 sm:px-6">
-        <div className="grid md:grid-cols-12 gap-8 md:gap-12 mb-12 md:mb-16">
-          <div className="md:col-span-6">
-            <div className="flex items-center gap-3 mb-6">
-              <img src="/logo.svg" alt="Sarathi" className="h-11 w-auto" />
-              <span className="font-display text-2xl font-bold text-slate-900">Sarathi</span>
-            </div>
-            <p className="text-slate-700 leading-relaxed max-w-md text-base sm:text-lg">
-              Your guide. Your companion. Your Sarathi.
-            </p>
-            <p className="text-slate-500 mt-4 text-sm max-w-md">
-              Built for parents of autistic children — so every small moment finds its meaning.
-            </p>
-          </div>
-
-          <div className="md:col-span-6 grid grid-cols-2 gap-6 sm:gap-8">
-            {footerLinks.map((group) => (
-              <div key={group.title}>
-                <h4 className="text-xs font-semibold tracking-extra-wide uppercase text-sky-600 mb-4">
-                  {group.title}
-                </h4>
-                <ul className="space-y-3">
-                  {group.links.map((link) => (
-                    <li key={link.name}>
-                      <a
-                        href={link.href}
-                        className="text-slate-600 hover:text-sky-600 transition-colors"
-                      >
-                        {link.name}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
+    <footer className="footer" role="contentinfo">
+      <div className="wrap">
+        <div className="footer__inner">
+          <div>
+            <div className="footer__logo">
+              <div className="footer__logo-mark" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none">
+                  <path d="M10 3C10 3 6 5.8 6 9.5C6 11.6 7.6 13.2 10 14C12.4 13.2 14 11.6 14 9.5C14 5.8 10 3 10 3Z" fill="white" fillOpacity=".9" />
+                  <circle cx="10" cy="16.5" r="1.4" fill="white" fillOpacity=".55" />
+                </svg>
               </div>
-            ))}
+              <span className="footer__logo-name">Saarathi</span>
+            </div>
+            <p className="footer__mission">Your guide. Your companion. Your Saarathi.<br />Built for parents of autistic children — so every small moment finds its meaning.</p>
+          </div>
+          <div>
+            <div className="footer__col-title">Navigate</div>
+            <ul className="footer__links">
+              <li><span className="footer__link" onClick={() => handleNav('/#reality')}>The Reality</span></li>
+              <li><span className="footer__link" onClick={() => handleNav('/#vision')}>Our Belief</span></li>
+              <li><span className="footer__link" onClick={() => handleNav('/awareness')}>Awareness</span></li>
+              <li><span className="footer__link" onClick={() => handleNav('#waitlist')}>Join Waitlist</span></li>
+            </ul>
+          </div>
+          <div>
+            <div className="footer__col-title">More</div>
+            <ul className="footer__links">
+              <li><span className="footer__link">Privacy Policy</span></li>
+              <li><span className="footer__link">Terms of Use</span></li>
+              <li><span className="footer__link">Contact</span></li>
+            </ul>
           </div>
         </div>
-
-        <div className="pt-8 border-t border-sky-100 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-slate-400">
-            © 2026 Sarathi. All rights reserved.
-          </p>
-          <p className="text-sm text-slate-400">
-            Built with care, for the families who need it most.
-          </p>
+        <div className="footer__bottom">
+          <p className="footer__copy">© 2026 Saarathi. All rights reserved.</p>
+          <p className="footer__tagline">Built with care, for the families who need it most.</p>
         </div>
       </div>
     </footer>
