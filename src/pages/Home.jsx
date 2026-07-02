@@ -37,11 +37,13 @@ function InlineForm({ formId, successId }) {
   }
   return (
     <div id={formId}>
-      <form className="hero__form-row" onSubmit={handleSubmit}>
-        <label htmlFor={`${formId}-email`} className="sr-only">Your email address</label>
-        <input type="email" id={`${formId}-email`} className="field-input" placeholder="Your email address" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Joining...' : 'Join Waitlist'}</button>
-      </form>
+      <div className="hero__form-wrapper">
+        <form className="hero__form" onSubmit={handleSubmit}>
+          <label htmlFor={`${formId}-email`} className="sr-only">Your email address</label>
+          <input type="email" id={`${formId}-email`} className="field-input" placeholder="Your email address" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Joining...' : 'Join Waitlist'}</button>
+        </form>
+      </div>
       {error && <p className="form-error" role="alert">{error}</p>}
       <div className="form-trust">
         <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
