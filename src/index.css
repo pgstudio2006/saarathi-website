@@ -114,11 +114,18 @@
 .hero__headline { font-size: clamp(2.375rem, 8.5vw, 5rem); font-weight: 800; letter-spacing: -.035em; line-height: 1.07; color: var(--text-1); margin-bottom: 1.25rem; }
 .hero__headline em { font-style: normal; background: linear-gradient(130deg, var(--lavender) 0%, var(--indigo-light) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 .hero__subhead { font-size: clamp(1rem, 2.5vw, 1.1875rem); color: var(--text-2); max-width: 48ch; margin: 0 auto 2.75rem; line-height: 1.75; }
-.hero__form { display: inline-flex; flex-direction: row; align-items: center; gap: .5rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-pill); padding: .3rem .3rem .3rem .875rem; box-shadow: var(--sh-sm); }
-.hero__form .field-input { all: unset; width: 180px; font-size: .875rem; color: var(--text-1); placeholder-color: var(--text-3); }
-.hero__form .field-input::placeholder { color: var(--text-3); }
-.hero__form .btn { flex-shrink: 0; padding: .5rem 1.125rem; font-size: .875rem; border-radius: var(--r-pill); }
 .hero__form-wrapper { display: flex; justify-content: center; }
+/* Mobile: stacked full-width */
+.hero__form { display: flex; flex-direction: column; gap: .625rem; width: 100%; max-width: 340px; }
+.hero__form .field-input { all: unset; width: 100%; box-sizing: border-box; padding: .75rem 1.25rem; font-size: .9375rem; color: var(--text-1); background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-pill); box-shadow: var(--sh-sm); }
+.hero__form .field-input::placeholder { color: var(--text-3); }
+.hero__form .btn { width: 100%; padding: .8125rem 1.25rem; font-size: .9375rem; font-weight: 700; border-radius: var(--r-pill); text-align: center; justify-content: center; }
+/* Desktop: inline pill */
+@media(min-width:520px) {
+  .hero__form { flex-direction: row; align-items: center; gap: .375rem; width: auto; max-width: none; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-pill); padding: .3rem .3rem .3rem .875rem; box-shadow: var(--sh-sm); }
+  .hero__form .field-input { width: 190px; padding: 0; background: transparent; border: none; box-shadow: none; border-radius: 0; }
+  .hero__form .btn { width: auto; padding: .5rem 1.125rem; font-size: .875rem; }
+}
 .hero__form-row { display: flex; flex-direction: column; gap: .5rem; }
 @media(min-width:520px) { .hero__form-row { flex-direction: row; } }
 .hero__form-row .field-input { padding: .625rem 1rem; font-size: .875rem; }
