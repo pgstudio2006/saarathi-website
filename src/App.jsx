@@ -10,10 +10,17 @@ import BlogPage from './pages/BlogPage'
 import AdminPage from './pages/AdminPage'
 
 function ScrollToTop() {
-  const { pathname } = useLocation()
+  const { pathname, hash } = useLocation()
   useEffect(() => {
+    if (hash) {
+      const el = document.getElementById(hash.slice(1))
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' })
+        return
+      }
+    }
     window.scrollTo(0, 0)
-  }, [pathname])
+  }, [pathname, hash])
   return null
 }
 
@@ -27,9 +34,9 @@ function App() {
       <ScrollToTop />
       <div className="min-h-screen bg-[var(--bg)]">
         <WaitlistModal isOpen={modalOpen} onClose={closeModal} />
-        <Navbar openModal={openModal} />
+        <Navbar />
         <Routes>
-          <Route path="/" element={<Home openModal={openModal} />} />
+          <Route path="/" element={<Home />} />
           <Route path="/awareness" element={<AwarenessPage />} />
           <Route path="/articles/:slug" element={<ArticlePage openModal={openModal} />} />
           <Route path="/blogs" element={<BlogPage />} />

@@ -13,7 +13,7 @@ export default function Footer({ openModal }) {
     }
     if (href.startsWith('/#')) {
       if (location.pathname !== '/') {
-        navigate('/' + href)
+        navigate(href)
       } else {
         const id = href.slice(2)
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })

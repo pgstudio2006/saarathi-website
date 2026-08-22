@@ -1,0 +1,112 @@
+.topbar {
+  --indigo: #5352C9;
+  --indigo-deep: #3E3DA8;
+  --lavender: #EDEDFB;
+  --lavender-soft: #F6F6FE;
+  --teal: #12A594;
+  --ink: #20224A;
+  --ink-soft: #5B5E85;
+  --line: #E4E4F2;
+  --white: #FFFFFF;
+  --maxw: 1140px;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(255, 255, 255, .85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+  transition: background .2s, box-shadow .2s;
+}
+
+.topbar.scrolled {
+  background: rgba(255, 255, 255, .98);
+  box-shadow: 0 2px 12px rgba(32, 34, 74, .08);
+}
+
+.topbar .wrap {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  text-decoration: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--indigo) 0%, var(--teal) 120%);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  flex: none;
+}
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+}
+
+.nav-links a {
+  text-decoration: none;
+  font-size: .95rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  transition: color .15s;
+  cursor: pointer;
+}
+
+.nav-links a:hover {
+  color: var(--ink);
+}
+
+.topbar-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--indigo);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: .9rem;
+  padding: 10px 18px;
+  border-radius: 999px;
+  transition: background .2s;
+  cursor: pointer;
+  border: none;
+}
+
+.topbar-cta:hover {
+  background: var(--indigo-deep);
+}
+
+.hamburger {
+  display: none;
+}
+
+@media (max-width: 820px) {
+  .topbar .nav-links {
+    display: none;
+  }
+  .topbar .hamburger {
+    display: flex;
+  }
+  .topbar-cta {
+    display: none;
+  }
+}

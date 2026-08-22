@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import './Navbar.css'
 
 const navLinks = [
   { name: 'The Reality', href: '/#reality' },
@@ -9,13 +10,11 @@ const navLinks = [
   { name: 'Admin', href: '/admin' },
 ]
 
-export default function Navbar({ openModal }) {
+export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-
-  if (location.pathname === '/') return null
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
@@ -31,7 +30,7 @@ export default function Navbar({ openModal }) {
   const handleNav = (href) => {
     if (href.startsWith('/#')) {
       if (location.pathname !== '/') {
-        navigate('/' + href)
+        navigate(href)
       } else {
         const id = href.slice(2)
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
@@ -44,42 +43,54 @@ export default function Navbar({ openModal }) {
 
   return (
     <>
-      <header className={`nav ${scrolled ? 'scrolled' : ''}`} role="banner">
+      <header className={`topbar ${scrolled ? 'scrolled' : ''}`} role="banner">
         <div className="wrap">
-          <div className="nav__row">
-            <button className="logo" aria-label="Saarathi home" onClick={() => handleNav('/')}>
-              <div className="logo__mark" aria-hidden="true">
-                <svg viewBox="0 0 20 20" fill="none">
-                  <path d="M10 3C10 3 6 5.8 6 9.5C6 11.6 7.6 13.2 10 14C12.4 13.2 14 11.6 14 9.5C14 5.8 10 3 10 3Z" fill="white" fillOpacity=".92" />
-                  <circle cx="10" cy="16.5" r="1.4" fill="white" fillOpacity=".55" />
-                </svg>
-              </div>
-              <span className="logo__name">Saarathi<span>.</span></span>
-            </button>
+          <a
+            className="brand"
+            href="/"
+            onClick={(e) => { e.preventDefault(); handleNav('/') }}
+            aria-label="Saarathi home"
+          >
+            <span className="brand-mark" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M12 3v7" />
+                <path d="M12 10c0 0 5-1 7-6" />
+                <path d="M12 10c0 0-5-1-7-6" />
+                <circle cx="12" cy="16" r="5" />
+              </svg>
+            </span>
+            Saarathi
+          </a>
 
-            <nav className="nav__links" aria-label="Primary">
-              {navLinks.map((link) => (
-                <span
-                  key={link.name}
-                  className="nav__link"
-                  onClick={() => handleNav(link.href)}
-                >
-                  {link.name}
-                </span>
-              ))}
-            </nav>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
-              <button className="btn btn-primary btn-sm nav__cta" onClick={openModal}>Join Waitlist</button>
-              <button
-                className={`hamburger ${mobileOpen ? 'open' : ''}`}
-                aria-label="Open menu"
-                aria-expanded={mobileOpen}
-                onClick={() => setMobileOpen(!mobileOpen)}
+          <nav className="nav-links" aria-label="Primary">
+            {navLinks.map((link) => (
+              <a
+                key={link.name}
+                href={link.href}
+                onClick={(e) => { e.preventDefault(); handleNav(link.href) }}
               >
-                <span></span><span></span><span></span>
-              </button>
-            </div>
+                {link.name}
+              </a>
+            ))}
+          </nav>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
+            <a
+              className="topbar-cta"
+              href="/#download"
+              onClick={(e) => { e.preventDefault(); handleNav('/#download') }}
+            >
+              Get the app
+            </a>
+            <button
+              className={`hamburger ${mobileOpen ? 'open' : ''}`}
+              aria-label="Open menu"
+              aria-expanded={mobileOpen}
+              onClick={() => setMobileOpen(!mobileOpen)}
+              type="button"
+            >
+              <span></span><span></span><span></span>
+            </button>
           </div>
         </div>
       </header>
@@ -90,8 +101,11 @@ export default function Navbar({ openModal }) {
             {link.name}
           </button>
         ))}
-        <button className="btn btn-primary btn-block" onClick={() => { setMobileOpen(false); openModal() }}>
-          Join Waitlist
+        <button
+          className="btn btn-primary btn-block"
+          onClick={() => { setMobileOpen(false); handleNav('/#download') }}
+        >
+          Get the app
         </button>
       </nav>
     </>
