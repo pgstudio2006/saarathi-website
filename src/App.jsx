@@ -6,6 +6,8 @@ import WaitlistModal from './components/WaitlistModal'
 import Home from './pages/Home'
 import AwarenessPage from './pages/AwarenessPage'
 import ArticlePage from './pages/ArticlePage'
+import BlogPage from './pages/BlogPage'
+import AdminPage from './pages/AdminPage'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -30,6 +32,9 @@ function App() {
           <Route path="/" element={<Home openModal={openModal} />} />
           <Route path="/awareness" element={<AwarenessPage />} />
           <Route path="/articles/:slug" element={<ArticlePage openModal={openModal} />} />
+          <Route path="/blogs" element={<BlogPage />} />
+          <Route path="/blogs/:slug" element={<BlogPage />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Routes>
         <Footer openModal={openModal} />
       </div>

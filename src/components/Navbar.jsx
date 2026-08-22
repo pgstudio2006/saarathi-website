@@ -5,6 +5,8 @@ const navLinks = [
   { name: 'The Reality', href: '/#reality' },
   { name: 'Our Belief', href: '/#vision' },
   { name: 'Awareness', href: '/awareness' },
+  { name: 'Blogs', href: '/blogs' },
+  { name: 'Admin', href: '/admin' },
 ]
 
 export default function Navbar({ openModal }) {
@@ -12,6 +14,8 @@ export default function Navbar({ openModal }) {
   const [scrolled, setScrolled] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
+
+  if (location.pathname === '/') return null
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)

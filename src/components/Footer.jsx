@@ -4,6 +4,8 @@ export default function Footer({ openModal }) {
   const navigate = useNavigate()
   const location = useLocation()
 
+  if (location.pathname === '/') return null
+
   const handleNav = (href) => {
     if (href === '#waitlist') {
       openModal()
