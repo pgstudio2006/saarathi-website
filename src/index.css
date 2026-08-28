@@ -422,3 +422,16 @@
 .admin-blog-image { width: 100%; border-radius: var(--r-lg); margin-block: 1.5rem; }
 .admin-blog-video { width: 100%; border-radius: var(--r-lg); overflow: hidden; margin-block: 1.5rem; }
 .admin-blog-video video { width: 100%; display: block; }
+
+/* Privacy policy page */
+.policy-toc { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: clamp(2rem, 5vw, 3rem); }
+.policy-toc__item { display: inline-flex; align-items: center; padding: .45rem .9rem; border-radius: var(--r-pill); border: 1px solid var(--border); background: var(--surface); font-size: .78rem; font-weight: 600; color: var(--text-2); text-decoration: none; transition: color 160ms ease, background 160ms ease, border-color 160ms ease; }
+.policy-toc__item:hover { color: var(--indigo); border-color: var(--lavender); background: var(--indigo-dim); }
+.policy-summary ul { text-align: left; max-width: 46ch; margin: 1.25rem auto 0; }
+.policy-summary ul li { margin-bottom: .625rem; }
+.article-body h3 { font-size: 1.0625rem; font-weight: 700; color: var(--text-1); margin-top: 1.75rem; margin-bottom: .625rem; }
+.article-body a { color: var(--indigo); font-weight: 600; text-decoration: none; border-bottom: 1px solid var(--lavender-soft); transition: border-color 140ms ease; }
+.article-body a:hover { border-color: var(--lavender); }
+.modal__trust a { color: var(--indigo); font-weight: 600; }
+.wl-legal { margin-top: .875rem; font-size: .75rem; color: var(--text-3); }
+.wl-legal a { color: var(--indigo); font-weight: 600; text-decoration: none; }

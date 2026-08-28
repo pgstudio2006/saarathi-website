@@ -8,6 +8,8 @@ import AwarenessPage from './pages/AwarenessPage'
 import ArticlePage from './pages/ArticlePage'
 import BlogPage from './pages/BlogPage'
 import AdminPage from './pages/AdminPage'
+import PrivacyPage from './pages/PrivacyPage'
+import TermsPage from './pages/TermsPage'
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation()
@@ -42,6 +44,8 @@ function App() {
           <Route path="/blogs" element={<BlogPage />} />
           <Route path="/blogs/:slug" element={<BlogPage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/privacy" element={<PrivacyPage openModal={openModal} />} />
+          <Route path="/terms" element={<TermsPage openModal={openModal} />} />
         </Routes>
         <Footer openModal={openModal} />
       </div>

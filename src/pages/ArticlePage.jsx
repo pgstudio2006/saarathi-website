@@ -154,6 +154,7 @@ function ArticleWaitlist() {
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -193,6 +194,7 @@ function ArticleWaitlist() {
         <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Joining...' : 'Join Waitlist'}</button>
       </form>
       {error && <p className="form-error" role="alert">{error}</p>}
+      <p className="wl-legal">By joining, you agree to our <a href="/privacy" onClick={(e) => { e.preventDefault(); navigate('/privacy') }}>Privacy Policy</a>.</p>
     </div>
   )
 }

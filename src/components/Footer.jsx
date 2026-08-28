@@ -51,8 +51,8 @@ export default function Footer({ openModal }) {
           <div>
             <div className="footer__col-title">More</div>
             <ul className="footer__links">
-              <li><span className="footer__link">Privacy Policy</span></li>
-              <li><span className="footer__link">Terms of Use</span></li>
+              <li><span className="footer__link" onClick={() => handleNav('/privacy')}>Privacy Policy</span></li>
+              <li><span className="footer__link" onClick={() => handleNav('/terms')}>Terms of Use</span></li>
               <li><span className="footer__link">Contact</span></li>
             </ul>
           </div>

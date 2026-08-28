@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { submitWaitlist } from '../utils/submitWaitlist'
 
 export default function WaitlistModal({ isOpen, onClose }) {
@@ -7,6 +8,7 @@ export default function WaitlistModal({ isOpen, onClose }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const inputRef = useRef(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : ''
@@ -76,7 +78,7 @@ export default function WaitlistModal({ isOpen, onClose }) {
                 <path d="M8 1.5L2 4v3.5c0 3.3 2.6 6.4 6 7 3.4-.6 6-3.7 6-7V4L8 1.5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                 <path d="M5.5 8l1.75 1.75L10.5 6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
               </svg>
-              No spam. Just one message when we are ready for you.
+              <span>No spam. Just one message when we are ready for you. · <a href="/privacy" onClick={(e) => { e.preventDefault(); onClose(); navigate('/privacy') }}>Privacy Policy</a></span>
             </div>
           </div>
         ) : (
