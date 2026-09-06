@@ -30,10 +30,7 @@ export default function Footer({ openModal }) {
           <div>
             <div className="footer__logo">
               <div className="footer__logo-mark" aria-hidden="true">
-                <svg viewBox="0 0 20 20" fill="none">
-                  <path d="M10 3C10 3 6 5.8 6 9.5C6 11.6 7.6 13.2 10 14C12.4 13.2 14 11.6 14 9.5C14 5.8 10 3 10 3Z" fill="white" fillOpacity=".9" />
-                  <circle cx="10" cy="16.5" r="1.4" fill="white" fillOpacity=".55" />
-                </svg>
+                <img src="/logo.svg" alt="" />
               </div>
               <span className="footer__logo-name">Saarathi</span>
             </div>

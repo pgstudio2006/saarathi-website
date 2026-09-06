@@ -52,12 +52,7 @@ export default function Navbar() {
             aria-label="Saarathi home"
           >
             <span className="brand-mark" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M12 3v7" />
-                <path d="M12 10c0 0 5-1 7-6" />
-                <path d="M12 10c0 0-5-1-7-6" />
-                <circle cx="12" cy="16" r="5" />
-              </svg>
+              <img src="/logo.svg" alt="" />
             </span>
             Saarathi
           </a>
