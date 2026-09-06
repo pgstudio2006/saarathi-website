@@ -116,7 +116,7 @@ export default function TermsPage({ openModal }) {
                 joining our waitlist does not create any clinician–patient relationship.
               </p>
               <p>
-                The ISAA-based screening we describe is a developmental <em>screening</em> tool. A screening is not a
+                The screening tool we describe is a developmental <em>screening</em>. A screening is not a
                 diagnosis, and a screening result never replaces an evaluation by a developmental paediatrician,
                 clinical psychologist, or therapist.
               </p>
