@@ -6,8 +6,6 @@ const navLinks = [
   { name: 'The Reality', href: '/#reality' },
   { name: 'Our Belief', href: '/#vision' },
   { name: 'Awareness', href: '/awareness' },
-  { name: 'Blogs', href: '/blogs' },
-  { name: 'Admin', href: '/admin' },
 ]
 
 export default function Navbar() {
