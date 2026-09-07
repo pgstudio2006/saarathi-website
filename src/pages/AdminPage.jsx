@@ -249,6 +249,15 @@ function Editor({ initial, onBack, onSaved }) {
     toastTimer.current = setTimeout(() => setToast(''), 3200)
   }
 
+  const friendlyError = (err) => {
+    const msg = err?.message || 'Something went wrong.'
+    if (/blob credentials|BLOB_READ_WRITE_TOKEN|BLOB_STORE_ID|no store/i.test(msg)) {
+      return 'Storage is not connected yet. In the Vercel dashboard open Storage → Create Database → Blob, connect this project, wait for the redeploy, then try again.'
+    }
+    if (/unauthorized/i.test(msg)) return 'Your session expired — please sign in again.'
+    return msg
+  }
+
   const isDirty = JSON.stringify(blog) !== savedSnapshot.current
   const anyUploading = Boolean(upload)
 
@@ -295,7 +304,7 @@ function Editor({ initial, onBack, onSaved }) {
       setBlockByUid(block.uid, { uid: block.uid, type: block.type, value: url, ...(posterUrl ? { poster: posterUrl } : {}) })
       showToast('File uploaded ✓')
     } catch (err) {
-      showToast(err.message || 'Upload failed.')
+      showToast(friendlyError(err))
     } finally {
       setUpload(null)
     }
@@ -326,7 +335,7 @@ function Editor({ initial, onBack, onSaved }) {
       showToast('Saved ✓ — live on the site')
       onSaved()
     } catch (err) {
-      showToast(err.message || 'Could not save.')
+      showToast(friendlyError(err))
     } finally {
       setSaving(false)
     }
