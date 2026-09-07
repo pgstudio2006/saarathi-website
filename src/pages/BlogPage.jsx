@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Navigate } from 'react-router-dom'
-import { getBlogs, getBlog } from '../utils/blogs'
+import { getBlog, loadBlogs } from '../utils/blogs'
 
 function BlogCard({ blog, onClick }) {
   return (
@@ -27,10 +27,13 @@ function BlogCard({ blog, onClick }) {
 
 function BlogDetail({ slug }) {
   const navigate = useNavigate()
-  const [blog, setBlog] = useState(null)
+  const [blog, setBlog] = useState(undefined) // undefined = loading, null = missing
 
   useEffect(() => {
-    setBlog(getBlog(slug))
+    let alive = true
+    setBlog(undefined)
+    getBlog(slug).then((b) => { if (alive) setBlog(b || null) })
+    return () => { alive = false }
   }, [slug])
 
   useEffect(() => {
@@ -39,7 +42,8 @@ function BlogDetail({ slug }) {
     return () => io.disconnect()
   }, [blog])
 
-  if (!blog) return <Navigate to="/blogs" replace />
+  if (blog === undefined) return <main><div className="wrap wrap--article"><p className="admin-empty-state">Loading…</p></div></main>
+  if (blog === null) return <Navigate to="/blogs" replace />
 
   return (
     <main>
@@ -81,7 +85,7 @@ function BlogDetail({ slug }) {
               )
               if (block.type === 'video') return (
                 <div key={i} className="admin-blog-video">
-                  <video controls src={block.value} />
+                  <video controls src={block.value} poster={block.poster || undefined} preload="metadata" />
                 </div>
               )
               return null
@@ -95,10 +99,12 @@ function BlogDetail({ slug }) {
 
 function BlogList() {
   const navigate = useNavigate()
-  const [blogs, setBlogs] = useState([])
+  const [blogs, setBlogs] = useState(null) // null = loading
 
   useEffect(() => {
-    setBlogs(getBlogs())
+    let alive = true
+    loadBlogs().then((list) => { if (alive) setBlogs(list) })
+    return () => { alive = false }
   }, [])
 
   useEffect(() => {
