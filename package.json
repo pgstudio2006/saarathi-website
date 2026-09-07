@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@netlify/blobs": "^7.4.0",
+    "@vercel/blob": "^2.8.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.18.0"

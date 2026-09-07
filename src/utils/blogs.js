@@ -9,6 +9,7 @@
 const BLOGS_KEY = 'saarathi_blogs'
 const KEY_STORAGE = 'saarathi_admin_key'
 const MODE_STORAGE = 'saarathi_admin_mode'
+const STRATEGY_STORAGE = 'saarathi_upload_strategy'
 const LOCAL_PASSWORD = import.meta.env?.VITE_ADMIN_PASSWORD || 'admin123'
 const CHUNK_SIZE = 3 * 1024 * 1024 // raw bytes per chunk (matches media.mjs)
 const SINGLE_LIMIT = 3.2 * 1024 * 1024 // switch to chunked upload above this
@@ -47,6 +48,20 @@ export function adminSession() {
 export function logoutAdmin() {
   sessionStorage.removeItem(KEY_STORAGE)
   sessionStorage.removeItem(MODE_STORAGE)
+  sessionStorage.removeItem(STRATEGY_STORAGE)
+}
+
+// Asks the media endpoint which platform is serving /api so uploads use the
+// right mechanism (Vercel Blob direct uploads vs Netlify chunked uploads).
+async function detectStrategy() {
+  try {
+    const res = await fetch('/api/media')
+    if (!res.ok) return null
+    const data = await res.json()
+    return data.platform || null
+  } catch {
+    return null
+  }
 }
 
 // Validates the password against the live API; falls back to the local
@@ -57,6 +72,9 @@ export async function loginAdmin(password) {
     if (res.ok) {
       sessionStorage.setItem(KEY_STORAGE, password)
       sessionStorage.setItem(MODE_STORAGE, 'api')
+      const strategy = await detectStrategy()
+      if (strategy) sessionStorage.setItem(STRATEGY_STORAGE, strategy)
+      else sessionStorage.removeItem(STRATEGY_STORAGE)
       return { ok: true, mode: 'api' }
     }
     if (res.status === 401) return { ok: false, error: 'Wrong password. Try again.' }
@@ -288,6 +306,21 @@ export async function uploadFile(file, onProgress) {
 
   let out = file
   if (out.type.startsWith('image/')) out = await compressImage(out)
+
+  // Vercel: browser uploads the file directly to Blob storage (the function
+  // only issues a short-lived token), so large videos never touch the API.
+  let strategy = null
+  try { strategy = sessionStorage.getItem(STRATEGY_STORAGE) } catch { strategy = null }
+  if (strategy === 'vercel') {
+    const { upload } = await import('@vercel/blob/client')
+    const blob = await upload(out.name, out, {
+      access: 'public',
+      handleUploadUrl: '/api/media',
+      clientPayload: session.key,
+      onProgress: (p) => { if (onProgress) onProgress(Math.round(p)) },
+    })
+    return blob.url
+  }
 
   if (out.size <= SINGLE_LIMIT) {
     const url = await apiUploadSingle(out)

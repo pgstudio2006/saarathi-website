@@ -66,7 +66,8 @@ export default async (req) => {
 
   if (method === 'GET') {
     const key = url.searchParams.get('key')
-    if (!key || !/^[A-Za-z0-9._-]+$/.test(key)) return json({ error: 'Invalid key' }, 400)
+    if (!key) return json({ ok: true, platform: 'netlify' })
+    if (!/^[A-Za-z0-9._-]+$/.test(key)) return json({ error: 'Invalid key' }, 400)
     const meta = await readMeta(store, key)
     if (!meta) return json({ error: 'Not found' }, 404)
 
