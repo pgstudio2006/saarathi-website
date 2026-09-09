@@ -38,6 +38,7 @@ async function writeIndex(index) {
     access: 'public',
     contentType: 'application/json',
     addRandomSuffix: false,
+    allowOverwrite: true, // the index is rewritten on every save/update/delete
     cacheControlMaxAge: 0,
   })
 }
