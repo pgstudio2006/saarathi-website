@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { articles, categories } from '../data/articles'
+import { loadBlogs } from '../utils/blogs'
 
 const iconMap = {
   'understanding-autism-beyond-labels': <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm0-4h-2c0-3.25 3-3 3-5 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 2.5-3 2.75-3 5z" fill="currentColor" fillOpacity=".18" />,
@@ -16,31 +17,47 @@ const iconMap = {
   'iep-meeting-guide': <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 12h6M9 16h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />,
 }
 
-function ArticleIcon({ slug, color }) {
+const fallbackIcon = (
+  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+)
+
+function ArticleIcon({ slug, color, isBlog }) {
   const paths = []
-  if (slug === 'language-of-routines') {
+  if (isBlog) {
+    paths.push(fallbackIcon)
+  } else if (slug === 'language-of-routines') {
     paths.push(<circle key="c" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" />)
     paths.push(<path key="p" d="M12 6v6l4 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />)
   } else if (slug === 'sensory-processing') {
     paths.push(<circle key="c" cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="1.5" />)
     paths.push(<path key="p" d="M23 21l-4.35-4.35" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />)
   } else {
-    paths.push(iconMap[slug])
+    paths.push(iconMap[slug] || fallbackIcon)
   }
   return <svg viewBox="0 0 24 24" fill="none" color={color}>{paths}</svg>
 }
 
 export default function AwarenessPage() {
   const [active, setActive] = useState('All Articles')
+  const [adminBlogs, setAdminBlogs] = useState([])
   const navigate = useNavigate()
+
+  useEffect(() => {
+    let alive = true
+    loadBlogs().then((list) => {
+      if (alive) setAdminBlogs((list || []).map((b) => ({ ...b, isBlog: true })))
+    })
+    return () => { alive = false }
+  }, [])
 
   useEffect(() => {
     const io = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) } }), { threshold: 0.08, rootMargin: '0px 0px -24px 0px' })
     document.querySelectorAll('.reveal:not(.in)').forEach((el) => io.observe(el))
     return () => io.disconnect()
-  }, [active])
+  }, [active, adminBlogs])
 
-  const filtered = active === 'All Articles' ? articles : articles.filter((a) => a.tag === active)
+  const allPosts = [...articles, ...adminBlogs]
+  const filtered = active === 'All Articles' ? allPosts : allPosts.filter((a) => a.tag === active)
 
   return (
     <>
@@ -75,20 +92,21 @@ export default function AwarenessPage() {
               <button
                 key={a.slug}
                 className={`article-card reveal ${i === 0 && a.featured ? 'article-card--featured' : ''} ${i > 0 ? `d${i % 3}` : ''}`}
-                onClick={() => navigate(`/articles/${a.slug}`)}
+                onClick={() => navigate(a.isBlog ? `/blogs/${a.slug}` : `/articles/${a.slug}`)}
               >
                 <div className="ac-visual" style={{ background: a.bg }} aria-hidden="true">
-                  <ArticleIcon slug={a.slug} color={a.color} />
+                  <ArticleIcon slug={a.slug} color={a.color} isBlog={a.isBlog} />
                 </div>
                 <div className="ac-body">
                   <div className="ac-meta">
                     <span className="ac-cat">{a.tag}</span>
                     <span className="ac-time">{a.readTime}</span>
+                    {a.isBlog && <span className="ac-featured-tag">Blog</span>}
                     {a.featured && <span className="ac-featured-tag">Featured</span>}
                   </div>
                   <h2 className="ac-title">{a.title}</h2>
                   <p className="ac-excerpt">{a.excerpt}</p>
-                  <span className="ac-link">Read this article <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
+                  <span className="ac-link">{a.isBlog ? 'Read this blog' : 'Read this article'} <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
                 </div>
               </button>
             ))}
