@@ -10,9 +10,11 @@ import {
   slugify,
   uploadFile,
   makeVideoPoster,
+  loadCategories,
+  saveCategories,
 } from '../utils/blogs'
 
-const CATEGORIES = ['Understanding', 'Daily life', 'Therapy', 'School', 'Self-care', 'Research', 'Admin']
+const FALLBACK_CATEGORIES = ['Understanding Autism', 'Daily Parenting', 'Collaboration', 'Research', 'Wellbeing']
 
 const THEMES = [
   { color: '#3A3ABF', bg: '#EEEEFF' },
@@ -34,7 +36,7 @@ const newBlog = () => ({
   slug: '',
   title: '',
   excerpt: '',
-  tag: 'Understanding',
+  tag: '',
   readTime: '4 min',
   date: today(),
   featured: false,
@@ -44,7 +46,19 @@ const newBlog = () => ({
   blocks: [],
 })
 
-const withUids = (blocks) => (blocks || []).map((b) => ({ ...b, uid: nextUid() }))
+const withUids = (blocks) =>
+  (blocks || []).map((b) => {
+    const next = { ...b, uid: nextUid() }
+    // Older posts stored plain text with newlines; give the rich editor the
+    // same visual line breaks instead of letting HTML collapse them.
+    if (next.type === 'text' && !next.html && typeof next.value === 'string') {
+      next.value = next.value
+        .split(/\n+/)
+        .map((line) => `<p>${line.trim() || '<br>'}</p>`)
+        .join('')
+    }
+    return next
+  })
 
 const formatSize = (bytes) => (bytes > 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.round(bytes / 1024)} KB`)
 
@@ -94,9 +108,66 @@ function LoginScreen({ onLogin }) {
   )
 }
 
+// ---------------- category manager ----------------
+
+function CategoryManager({ categories, onClose, onSave }) {
+  const [rows, setRows] = useState(() => categories.map((name) => ({ id: nextUid(), name, original: name })))
+  const [saving, setSaving] = useState(false)
+
+  const addRow = () => setRows((r) => [...r, { id: nextUid(), name: '', original: null }])
+  const updateRow = (id, name) => setRows((r) => r.map((row) => (row.id === id ? { ...row, name } : row)))
+  const removeRow = (id) => setRows((r) => r.filter((row) => row.id !== id))
+
+  const handleSave = async () => {
+    if (saving) return
+    const names = rows.map((r) => r.name.trim()).filter(Boolean)
+    const unique = [...new Set(names)]
+    // Any row whose name changed is a rename: old → new, so existing posts
+    // can be re-tagged to follow the category.
+    const renameMap = {}
+    for (const row of rows) {
+      if (row.original && row.name.trim() && row.name.trim() !== row.original) {
+        renameMap[row.original] = row.name.trim()
+      }
+    }
+    setSaving(true)
+    await onSave(unique, renameMap)
+    setSaving(false)
+  }
+
+  return (
+    <div className="admin-modal-overlay" onClick={onClose}>
+      <div className="admin-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Manage categories">
+        <h3 className="admin-modal__title">Manage categories</h3>
+        <p className="admin-modal__body">
+          Rename a category to update it everywhere — every post using it is updated too. Add new ones for future posts.
+        </p>
+        <div className="admin-modal__rows">
+          {rows.map((row) => (
+            <div key={row.id} className="admin-modal__row">
+              <input
+                className="field-input"
+                placeholder="Category name"
+                value={row.name}
+                onChange={(e) => updateRow(row.id, e.target.value)}
+              />
+              <button type="button" className="admin-block__action admin-block__action--danger" title="Remove category" onClick={() => removeRow(row.id)}>✕</button>
+            </div>
+          ))}
+        </div>
+        <button type="button" className="btn btn-ghost btn-sm admin-modal__add" onClick={addRow}>+ Add category</button>
+        <div className="admin-modal__actions">
+          <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          <button type="button" className="btn btn-primary" disabled={saving} onClick={handleSave}>{saving ? 'Saving…' : 'Save categories'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ---------------- dashboard ----------------
 
-function Dashboard({ blogs, loading, mode, onNew, onEdit, onTogglePublish, onDelete, onLogout }) {
+function Dashboard({ blogs, categories, loading, mode, onNew, onEdit, onTogglePublish, onDelete, onManageCategories, onLogout }) {
   const navigate = useNavigate()
   return (
     <div className="admin-shell">
@@ -106,6 +177,7 @@ function Dashboard({ blogs, loading, mode, onNew, onEdit, onTogglePublish, onDel
           <span>Saarathi Admin</span>
         </div>
         <div className="admin-topbar__actions">
+          <button className="btn btn-ghost btn-sm" onClick={onManageCategories}>Categories</button>
           <button className="btn btn-ghost btn-sm" onClick={onNew}>+ New blog</button>
           <button className="btn btn-ghost btn-sm" onClick={onLogout}>Log out</button>
         </div>
@@ -113,7 +185,7 @@ function Dashboard({ blogs, loading, mode, onNew, onEdit, onTogglePublish, onDel
 
       {mode === 'local' && (
         <div className="admin-banner admin-banner--warn">
-          Local preview mode — changes stay in this browser only. Open the site on Netlify and sign in there to publish live.
+          Local preview mode — changes stay in this browser only. Open the site on Vercel or Netlify and sign in there to publish live.
         </div>
       )}
 
@@ -148,7 +220,7 @@ function Dashboard({ blogs, loading, mode, onNew, onEdit, onTogglePublish, onDel
                   <button className="btn btn-ghost btn-sm" onClick={() => onTogglePublish(b)}>
                     {b.published === false ? 'Publish' : 'Unpublish'}
                   </button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/blogs/${b.slug}`)}>View</button>
+                  {b.published !== false && <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/blogs/${b.slug}`)}>View</button>}
                   <button className="btn btn-danger btn-sm" onClick={() => onDelete(b)}>Delete</button>
                 </div>
               </article>
@@ -156,6 +228,93 @@ function Dashboard({ blogs, loading, mode, onNew, onEdit, onTogglePublish, onDel
           </div>
         )}
       </section>
+    </div>
+  )
+}
+
+// ---------------- rich text editor ----------------
+
+const RICH_ACTIONS = [
+  { cmd: 'bold', label: 'B', title: 'Bold', className: 'rt-btn--bold' },
+  { cmd: 'italic', label: 'I', title: 'Italic', className: 'rt-btn--italic' },
+  { cmd: 'underline', label: 'U', title: 'Underline', className: 'rt-btn--underline' },
+  { cmd: 'strikeThrough', label: 'S', title: 'Strikethrough', className: 'rt-btn--strike' },
+  { cmd: 'formatBlock', arg: 'h3', label: 'H', title: 'Subheading', className: 'rt-btn--h3' },
+  { cmd: 'insertUnorderedList', label: '• List', title: 'Bullet list' },
+  { cmd: 'insertOrderedList', label: '1. List', title: 'Numbered list' },
+  { cmd: 'formatBlock', arg: 'blockquote', label: '❝', title: 'Quote' },
+  { cmd: 'removeFormat', label: '⌫', title: 'Clear formatting' },
+]
+
+function RichText({ value, onChange, placeholder }) {
+  const ref = useRef(null)
+  // Track whether we caused the next input event, so we can skip echoing
+  // React's own re-render back into the contentEditable (which resets the caret).
+  const composing = useRef(false)
+
+  useEffect(() => {
+    if (ref.current && !composing.current && ref.current.innerHTML !== value) {
+      ref.current.innerHTML = value || ''
+    }
+  }, [value])
+
+  const emit = () => {
+    if (!ref.current) return
+    composing.current = true
+    onChange(ref.current.innerHTML)
+    requestAnimationFrame(() => { composing.current = false })
+  }
+
+  const run = (cmd, arg) => {
+    ref.current?.focus()
+    document.execCommand(cmd, false, arg)
+    emit()
+  }
+
+  const makeLink = () => {
+    const sel = window.getSelection()
+    if (!sel || sel.isCollapsed) return
+    const url = window.prompt('Link URL (https://…)')
+    if (!url) return
+    document.execCommand('createLink', false, url)
+    // Sanitize fresh links immediately.
+    ref.current?.querySelectorAll('a').forEach((a) => {
+      a.setAttribute('target', '_blank')
+      a.setAttribute('rel', 'noopener noreferrer')
+      if (/^\s*javascript:/i.test(a.getAttribute('href') || '')) a.removeAttribute('href')
+    })
+    emit()
+  }
+
+  return (
+    <div className="rt">
+      <div className="rt-toolbar" role="toolbar" aria-label="Text formatting" onMouseDown={(e) => e.preventDefault()}>
+        {RICH_ACTIONS.map((a) => (
+          <button
+            key={a.title}
+            type="button"
+            className={`rt-btn ${a.className || ''}`}
+            title={a.title}
+            aria-label={a.title}
+            onClick={() => run(a.cmd, a.arg)}
+          >
+            {a.label}
+          </button>
+        ))}
+        <button type="button" className="rt-btn" title="Link" aria-label="Insert link" onClick={makeLink}>🔗</button>
+      </div>
+      <div
+        ref={ref}
+        className="rt-area"
+        contentEditable
+        suppressContentEditableWarning
+        role="textbox"
+        aria-multiline="true"
+        aria-label={placeholder || 'Rich text'}
+        data-placeholder={placeholder}
+        onInput={emit}
+        onBlur={emit}
+      />
     </div>
   )
 }
@@ -170,6 +329,10 @@ function BlockCard({ block, index, total, uploadState, onChange, onMove, onRemov
     e.target.value = ''
     if (file) onChange({ ...block, __file: file })
   }
+
+  const setField = (patch) => onChange({ ...block, ...patch })
+
+  const isMedia = block.type === 'image' || block.type === 'video' || block.type === 'audio'
 
   return (
     <div className="admin-block">
@@ -187,19 +350,17 @@ function BlockCard({ block, index, total, uploadState, onChange, onMove, onRemov
             className="field-input"
             placeholder="Section heading"
             value={block.value || ''}
-            onChange={(e) => onChange({ ...block, value: e.target.value })}
+            onChange={(e) => setField({ value: e.target.value })}
           />
         )}
         {block.type === 'text' && (
-          <textarea
-            className="field-input admin-textarea"
-            rows={4}
-            placeholder="Write the paragraph…"
+          <RichText
             value={block.value || ''}
-            onChange={(e) => onChange({ ...block, value: e.target.value })}
+            onChange={(html) => setField({ value: html, html: true })}
+            placeholder="Write the paragraph… use the toolbar for bold, italic, lists and quotes."
           />
         )}
-        {(block.type === 'image' || block.type === 'video' || block.type === 'audio') && (
+        {isMedia && (
           <div className="admin-media-input">
             {block.value && block.type === 'image' && <img className="admin-preview-image" src={block.value} alt="" />}
             {block.value && block.type === 'video' && (
@@ -219,6 +380,26 @@ function BlockCard({ block, index, total, uploadState, onChange, onMove, onRemov
                 onChange={pickFile}
               />
             </div>
+            <div className="admin-media-meta">
+              <label className="admin-field">
+                <span>Title {block.type === 'audio' || block.type === 'video' ? '' : '(optional)'}</span>
+                <input
+                  className="field-input"
+                  placeholder={block.type === 'image' ? 'Caption for this image' : `Title for this ${block.type}`}
+                  value={block.title || ''}
+                  onChange={(e) => setField({ title: e.target.value })}
+                />
+              </label>
+              <label className="admin-field">
+                <span>Subtitle (optional)</span>
+                <input
+                  className="field-input"
+                  placeholder="Short description shown under the title"
+                  value={block.subtitle || ''}
+                  onChange={(e) => setField({ subtitle: e.target.value })}
+                />
+              </label>
+            </div>
             {uploadState && (
               <div className="admin-progress" role="status">
                 <div className="admin-progress__bar"><div className="admin-progress__fill" style={{ width: `${uploadState.pct}%` }} /></div>
@@ -234,7 +415,7 @@ function BlockCard({ block, index, total, uploadState, onChange, onMove, onRemov
 
 // ---------------- editor ----------------
 
-function Editor({ initial, onBack, onSaved }) {
+function Editor({ initial, categories, onBack, onSaved }) {
   const [blog, setBlog] = useState(() => ({ ...newBlog(), ...initial, blocks: withUids(initial.blocks) }))
   const [slugTouched, setSlugTouched] = useState(Boolean(initial.slug))
   const [saving, setSaving] = useState(false)
@@ -301,7 +482,14 @@ function Editor({ initial, onBack, onSaved }) {
       const url = await uploadFile(file, (pct) =>
         setUpload({ uid: block.uid, pct: posterUrl ? 15 + Math.round(pct * 0.85) : Math.max(1, pct) })
       )
-      setBlockByUid(block.uid, { uid: block.uid, type: block.type, value: url, ...(posterUrl ? { poster: posterUrl } : {}) })
+      setBlockByUid(block.uid, {
+        uid: block.uid,
+        type: block.type,
+        value: url,
+        title: block.title || '',
+        subtitle: block.subtitle || '',
+        ...(posterUrl ? { poster: posterUrl } : {}),
+      })
       showToast('File uploaded ✓')
     } catch (err) {
       showToast(friendlyError(err))
@@ -317,7 +505,7 @@ function Editor({ initial, onBack, onSaved }) {
       slug: blog.slug || slugify(blog.title) || `post-${Date.now()}`,
       title: blog.title.trim(),
       excerpt: blog.excerpt || '',
-      tag: blog.tag,
+      tag: blog.tag || categories[0] || 'General',
       readTime: blog.readTime || '4 min',
       date: blog.date || today(),
       featured: Boolean(blog.featured),
@@ -326,7 +514,7 @@ function Editor({ initial, onBack, onSaved }) {
       published: blog.published !== false,
       blocks: blog.blocks
         .map(({ uid: _uid, __file, ...rest }) => rest)
-        .filter((b) => (b.type === 'heading' || b.type === 'text' ? String(b.value || '').trim() !== '' : Boolean(b.value))),
+        .filter((b) => (b.type === 'heading' ? String(b.value || '').trim() !== '' : Boolean(b.value))),
     }
     setSaving(true)
     try {
@@ -340,6 +528,8 @@ function Editor({ initial, onBack, onSaved }) {
       setSaving(false)
     }
   }
+
+  const categoryOptions = blog.tag && !categories.includes(blog.tag) ? [...categories, blog.tag] : categories
 
   return (
     <div className="admin-shell">
@@ -375,8 +565,9 @@ function Editor({ initial, onBack, onSaved }) {
           </label>
           <label className="admin-field">
             <span>Category</span>
-            <select className="field-input" value={blog.tag} onChange={(e) => set({ tag: e.target.value })}>
-              {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+            <select className="field-input" value={blog.tag || ''} onChange={(e) => set({ tag: e.target.value })}>
+              {!blog.tag && <option value="">Choose…</option>}
+              {categoryOptions.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </label>
           <label className="admin-field">
@@ -465,12 +656,19 @@ export default function AdminPage() {
   const navigate = useNavigate()
   const [session, setSession] = useState(adminSession())
   const [blogs, setBlogs] = useState([])
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(null) // null = dashboard, object = editor
+  const [showCategoryManager, setShowCategoryManager] = useState(false)
 
   const refresh = async () => {
     setLoading(true)
-    setBlogs(await adminLoadBlogs())
+    const [allBlogs, cats] = await Promise.all([adminLoadBlogs(), loadCategories()])
+    setBlogs(allBlogs)
+    // Posts may use categories that are not in the saved list (e.g. legacy
+    // posts) — show them in the dropdowns so nothing gets mis-tagged.
+    const used = allBlogs.map((b) => b.tag).filter(Boolean)
+    setCategories([...new Set([...cats, ...used])])
     setLoading(false)
   }
 
@@ -500,6 +698,17 @@ export default function AdminPage() {
     }
   }
 
+  const handleSaveCategories = async (next, renameMap) => {
+    const saved = await saveCategories(next, renameMap)
+    setShowCategoryManager(false)
+    // Reload so renamed categories show up on the posts immediately.
+    await refresh()
+    setCategories((current) => {
+      const used = blogs.map((b) => b.tag).filter(Boolean)
+      return [...new Set([...saved, ...current, ...used])]
+    })
+  }
+
   const handleLogout = () => {
     logoutAdmin()
     setSession(null)
@@ -507,19 +716,30 @@ export default function AdminPage() {
   }
 
   if (editing) {
-    return <Editor initial={editing} onBack={() => { setEditing(null); refresh() }} onSaved={() => { setEditing(null); refresh() }} />
+    return <Editor initial={editing} categories={categories} onBack={() => { setEditing(null); refresh() }} onSaved={() => { setEditing(null); refresh() }} />
   }
 
   return (
-    <Dashboard
-      blogs={blogs}
-      loading={loading}
-      mode={session.mode}
-      onNew={() => setEditing(newBlog())}
-      onEdit={(b) => setEditing(b)}
-      onTogglePublish={handleTogglePublish}
-      onDelete={handleDelete}
-      onLogout={handleLogout}
-    />
+    <>
+      <Dashboard
+        blogs={blogs}
+        categories={categories}
+        loading={loading}
+        mode={session.mode}
+        onNew={() => setEditing(newBlog())}
+        onEdit={(b) => setEditing(b)}
+        onTogglePublish={handleTogglePublish}
+        onDelete={handleDelete}
+        onManageCategories={() => setShowCategoryManager(true)}
+        onLogout={handleLogout}
+      />
+      {showCategoryManager && (
+        <CategoryManager
+          categories={categories}
+          onClose={() => setShowCategoryManager(false)}
+          onSave={handleSaveCategories}
+        />
+      )}
+    </>
   )
 }

@@ -1,11 +1,13 @@
 // Vercel serverless function: blog storage on Vercel Blob.
-//   GET    /api/blogs        -> published blogs (public)
-//   GET    /api/blogs?all=1  -> all blogs incl. drafts (admin key required)
+//   GET    /api/blogs        -> published blogs + categories (public)
+//   GET    /api/blogs?all=1  -> all blogs incl. drafts + categories (admin)
 //   POST   /api/blogs        -> create/update a blog (admin key required)
+//   PUT    /api/blogs        -> save the category list (admin key required)
 //   DELETE /api/blogs?slug=x -> delete a blog (admin key required)
 // Mirrors the contract of the Netlify version so the frontend is identical.
 
 import { put, list } from '@vercel/blob'
+import { defaultBlogs, DEFAULT_CATEGORIES } from '../src/data/defaultBlogs.js'
 
 const INDEX_PATH = 'blogs.json'
 
@@ -16,7 +18,10 @@ const authorized = (req) => {
   return typeof key === 'string' && key.length > 0 && key === getAdminKey()
 }
 
-const emptyIndex = () => ({ blogs: [] })
+// Until the first admin save creates the index file, the built-in launch
+// articles are served as the default content — and the first edit/unpublish/
+// delete persists them, making them fully manageable from then on.
+const emptyIndex = () => ({ blogs: defaultBlogs, categories: [...DEFAULT_CATEGORIES] })
 
 async function readIndex() {
   try {
@@ -27,7 +32,9 @@ async function readIndex() {
     const res = await fetch(`${blob.url}${blob.url.includes('?') ? '&' : '?'}cb=${Date.now()}`)
     if (!res.ok) return emptyIndex()
     const data = await res.json()
-    return data && Array.isArray(data.blogs) ? data : emptyIndex()
+    const index = data && Array.isArray(data.blogs) ? data : emptyIndex()
+    if (!Array.isArray(index.categories)) index.categories = []
+    return index
   } catch {
     return emptyIndex()
   }
@@ -58,7 +65,10 @@ export default async function handler(req, res) {
       if (wantsAll && !authorized(req)) return res.status(401).json({ error: 'Unauthorized' })
       const index = await readIndex()
       const blogs = wantsAll ? index.blogs : index.blogs.filter((b) => b.published !== false)
-      return res.status(200).json({ blogs })
+      // Categories: saved list first; fall back to whatever posts use.
+      const used = [...new Set(blogs.map((b) => b.tag).filter(Boolean))]
+      const categories = index.categories.length ? index.categories : used.length ? used : [...DEFAULT_CATEGORIES]
+      return res.status(200).json({ blogs, categories })
     }
 
     if (req.method === 'POST') {
@@ -73,8 +83,22 @@ export default async function handler(req, res) {
       const entry = { ...blog, updatedAt: new Date().toISOString() }
       if (existing === -1) index.blogs.unshift(entry)
       else index.blogs[existing] = entry
+      // Keep the saved category list aware of any new category.
+      if (entry.tag && !index.categories.includes(entry.tag)) {
+        index.categories = [...index.categories, entry.tag]
+      }
       await writeIndex(index)
       return res.status(200).json({ ok: true, blog: entry })
+    }
+
+    if (req.method === 'PUT') {
+      if (!authorized(req)) return res.status(401).json({ error: 'Unauthorized' })
+      const payload = req.body || {}
+      const cats = [...new Set((payload.categories || []).map((c) => String(c).trim()).filter(Boolean))]
+      const index = await readIndex()
+      index.categories = cats
+      await writeIndex(index)
+      return res.status(200).json({ ok: true, categories: cats })
     }
 
     if (req.method === 'DELETE') {

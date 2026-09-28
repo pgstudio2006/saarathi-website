@@ -1,12 +1,14 @@
 // Netlify Function (v2): blog storage on Netlify Blobs.
-//   GET    /api/blogs            -> published blogs (public)
-//   GET    /api/blogs?all=1      -> all blogs incl. drafts (admin key required)
-//   POST   /api/blogs            -> create/update a blog (admin key required)
-//   DELETE /api/blogs?slug=x     -> delete a blog (admin key required)
-// Admin key comes from the ADMIN_PASSWORD environment variable (set in Netlify
-// dashboard), with a safe default so the site works before it is configured.
+//   GET    /api/blogs        -> published blogs + categories (public)
+//   GET    /api/blogs?all=1  -> all blogs incl. drafts + categories (admin)
+//   POST   /api/blogs        -> create/update a blog (admin key required)
+//   PUT    /api/blogs        -> save the category list (admin key required)
+//   DELETE /api/blogs?slug=x -> delete a blog (admin key required)
+// Admin key comes from the ADMIN_PASSWORD environment variable (set in the
+// Netlify dashboard), with a safe default so the site works before it is.
 
 import { getStore } from '@netlify/blobs'
+import { defaultBlogs, DEFAULT_CATEGORIES } from '../../src/data/defaultBlogs.js'
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -27,12 +29,15 @@ const authorized = (req) => {
   return key.length > 0 && key === getAdminKey()
 }
 
-const emptyIndex = () => ({ blogs: [] })
+const emptyIndex = () => ({ blogs: defaultBlogs, categories: [...DEFAULT_CATEGORIES] })
 
 const readIndex = async (store) => {
   try {
     const raw = await store.get('index', { type: 'json', consistency: 'strong' })
-    if (raw && Array.isArray(raw.blogs)) return raw
+    if (raw && Array.isArray(raw.blogs)) {
+      if (!Array.isArray(raw.categories)) raw.categories = []
+      return raw
+    }
   } catch {
     /* first run: nothing stored yet */
   }
@@ -59,7 +64,9 @@ export default async (req) => {
     if (wantsAll && !authorized(req)) return json({ error: 'Unauthorized' }, 401)
     const index = await readIndex(store)
     const blogs = wantsAll ? index.blogs : index.blogs.filter((b) => b.published !== false)
-    return json({ blogs })
+    const used = [...new Set(blogs.map((b) => b.tag).filter(Boolean))]
+    const categories = index.categories.length ? index.categories : used.length ? used : DEFAULT_CATEGORIES
+    return json({ blogs, categories })
   }
 
   if (method === 'POST') {
@@ -78,8 +85,26 @@ export default async (req) => {
     const entry = { ...blog, updatedAt: new Date().toISOString() }
     if (existing === -1) index.blogs.unshift(entry)
     else index.blogs[existing] = entry
+    if (entry.tag && !index.categories.includes(entry.tag)) {
+      index.categories = [...index.categories, entry.tag]
+    }
     await writeIndex(store, index)
     return json({ ok: true, blog: entry })
+  }
+
+  if (method === 'PUT') {
+    if (!authorized(req)) return json({ error: 'Unauthorized' }, 401)
+    let payload
+    try {
+      payload = await req.json()
+    } catch {
+      return json({ error: 'Invalid JSON body' }, 400)
+    }
+    const cats = [...new Set(((payload && payload.categories) || []).map((c) => String(c).trim()).filter(Boolean))]
+    const index = await readIndex(store)
+    index.categories = cats
+    await writeIndex(store, index)
+    return json({ ok: true, categories: cats })
   }
 
   if (method === 'DELETE') {

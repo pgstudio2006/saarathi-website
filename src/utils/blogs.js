@@ -1,37 +1,22 @@
 // Blog data layer.
 //
-// Production (Netlify): blogs live in Netlify Blobs via /api functions, so
-// anything published from the admin is visible to every visitor.
-// Local dev (`vite dev` alone): falls back to localStorage so the workflow
-// still works offline. In that mode uploads become data URLs, exactly like
-// the old behaviour — they stay on that machine only.
+// Production (Vercel/Netlify): blogs + categories live in blob storage via
+// /api functions, so anything published from the admin is visible to every
+// visitor. Local dev (`vite dev` alone): falls back to localStorage so the
+// workflow still works offline. In that mode uploads become data URLs —
+// they stay on that machine only.
+
+import { defaultBlogs, DEFAULT_CATEGORIES } from '../data/defaultBlogs'
 
 const BLOGS_KEY = 'saarathi_blogs'
+const CATEGORIES_KEY = 'saarathi_categories'
+const SEEDED_KEY = 'saarathi_seeded'
 const KEY_STORAGE = 'saarathi_admin_key'
 const MODE_STORAGE = 'saarathi_admin_mode'
 const STRATEGY_STORAGE = 'saarathi_upload_strategy'
 const LOCAL_PASSWORD = import.meta.env?.VITE_ADMIN_PASSWORD || 'admin123'
 const CHUNK_SIZE = 3 * 1024 * 1024 // raw bytes per chunk (matches media.mjs)
 const SINGLE_LIMIT = 3.2 * 1024 * 1024 // switch to chunked upload above this
-
-const defaultBlogs = [
-  {
-    slug: 'admin-welcome',
-    title: 'Welcome to the Saarathi Blog',
-    excerpt: 'A sample post showing how blogs appear on the site.',
-    tag: 'Admin',
-    readTime: '3 min',
-    date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
-    featured: false,
-    color: '#3A3ABF',
-    bg: '#EEEEFF',
-    published: true,
-    blocks: [
-      { type: 'heading', value: 'Getting started' },
-      { type: 'text', value: 'Use the admin panel to write posts with text, images, audio and video blocks. Each block can be reordered before you publish.' },
-    ],
-  },
-]
 
 // ---------- session ----------
 
@@ -65,28 +50,36 @@ async function detectStrategy() {
 }
 
 // Validates the password against the live API; falls back to the local
-// development password when the API is unreachable (plain `vite dev`).
+// development password when no real backend exists behind /api (plain
+// `vite dev` has no serverless functions, so /api/* returns 404/500 with a
+// non-JSON body). A JSON response with { blogs } means a real API is live.
 export async function loginAdmin(password) {
   try {
     const res = await fetch('/api/blogs?all=1', { headers: { 'x-admin-key': password } })
-    if (res.ok) {
-      sessionStorage.setItem(KEY_STORAGE, password)
-      sessionStorage.setItem(MODE_STORAGE, 'api')
-      const strategy = await detectStrategy()
-      if (strategy) sessionStorage.setItem(STRATEGY_STORAGE, strategy)
-      else sessionStorage.removeItem(STRATEGY_STORAGE)
-      return { ok: true, mode: 'api' }
+    const isJson = (res.headers.get('content-type') || '').toLowerCase().includes('application/json')
+    if (isJson) {
+      const data = await res.json().catch(() => null)
+      if (data && Array.isArray(data.blogs)) {
+        sessionStorage.setItem(KEY_STORAGE, password)
+        sessionStorage.setItem(MODE_STORAGE, 'api')
+        const strategy = await detectStrategy()
+        if (strategy) sessionStorage.setItem(STRATEGY_STORAGE, strategy)
+        else sessionStorage.removeItem(STRATEGY_STORAGE)
+        return { ok: true, mode: 'api' }
+      }
+      if (data && data.error) return { ok: false, error: data.error === 'Unauthorized' ? 'Wrong password. Try again.' : data.error }
+      return { ok: false, error: 'Server error — please try again.' }
     }
-    if (res.status === 401) return { ok: false, error: 'Wrong password. Try again.' }
-    return { ok: false, error: 'Server error — please try again.' }
+    // Non-JSON body: no backend behind /api here (bare `vite dev`).
   } catch {
-    if (password === LOCAL_PASSWORD) {
-      sessionStorage.setItem(KEY_STORAGE, password)
-      sessionStorage.setItem(MODE_STORAGE, 'local')
-      return { ok: true, mode: 'local' }
-    }
-    return { ok: false, error: 'Could not reach the server.' }
+    /* network error — continue to the local password check below */
   }
+  if (password === LOCAL_PASSWORD) {
+    sessionStorage.setItem(KEY_STORAGE, password)
+    sessionStorage.setItem(MODE_STORAGE, 'local')
+    return { ok: true, mode: 'local' }
+  }
+  return { ok: false, error: 'Could not reach the server.' }
 }
 
 const authHeaders = () => {
@@ -94,13 +87,149 @@ const authHeaders = () => {
   return s ? { 'x-admin-key': s.key } : {}
 }
 
+// ---------- html safety ----------
+
+// Escapes text so it can be embedded in generated HTML.
+export function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+const ALLOWED_TAGS = new Set([
+  'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'span', 'a',
+  'ul', 'ol', 'li', 'blockquote', 'h3', 'h4',
+])
+
+const ALLOWED_ATTRS = {
+  a: ['href', 'target', 'rel'],
+  span: ['class'],
+}
+
+// Whitelist-based HTML sanitizer for rich-text blocks. Everything the admin
+// toolbar produces passes through; scripts, styles and unknown tags do not.
+export function sanitizeHtml(html) {
+  const doc = new DOMParser().parseFromString(String(html ?? ''), 'text/html')
+
+  const walk = (node) => {
+    for (const child of [...node.children]) {
+      const tag = child.tagName.toLowerCase()
+      if (!ALLOWED_TAGS.has(tag)) {
+        // Unwrap containers (div etc.), drop dangerous ones entirely.
+        if (tag === 'script' || tag === 'style' || tag === 'iframe' || tag === 'object' || tag === 'embed' || tag === 'link' || tag === 'meta') {
+          child.remove()
+        } else {
+          child.replaceWith(...child.childNodes)
+        }
+        continue
+      }
+      for (const attr of [...child.attributes]) {
+        const name = attr.name.toLowerCase()
+        const allowed = (ALLOWED_ATTRS[tag] || []).includes(name)
+        const unsafe = name.startsWith('on') || (name === 'href' && /^\s*javascript:/i.test(attr.value))
+        if (!allowed || unsafe) child.removeAttribute(attr.name)
+      }
+      if (tag === 'a') {
+        child.setAttribute('rel', 'noopener noreferrer')
+        if (!child.getAttribute('target')) child.setAttribute('target', '_blank')
+      }
+      if (tag === 'span' && child.getAttribute('class') !== 'highlight') child.removeAttribute('class')
+      walk(child)
+    }
+  }
+  walk(doc.body)
+  return doc.body.innerHTML
+}
+
+// ---------- categories ----------
+
+// Categories last returned by the API (set by adminLoadBlogs) so the admin
+// editor and the category manager use the server's saved list.
+let lastServerCategories = null
+
+export async function loadCategories() {
+  if (Array.isArray(lastServerCategories) && lastServerCategories.length) {
+    return [...lastServerCategories]
+  }
+  try {
+    const raw = localStorage.getItem(CATEGORIES_KEY)
+    const parsed = raw ? JSON.parse(raw) : null
+    if (Array.isArray(parsed) && parsed.length) return parsed
+  } catch { /* ignore */ }
+  return [...DEFAULT_CATEGORIES]
+}
+
+// Saves the category list and applies renames to every post that used the
+// old name, so "Understanding Autism" → "Autism 101" updates existing posts.
+export async function saveCategories(cats, renameMap = {}) {
+  const clean = [...new Set((cats || []).map((c) => String(c).trim()).filter(Boolean))]
+  try { localStorage.setItem(CATEGORIES_KEY, JSON.stringify(clean)) } catch { /* ignore */ }
+
+  const renames = Object.entries(renameMap).filter(([from, to]) => from && to && from !== to)
+  const session = adminSession()
+  const isApi = session && session.mode !== 'local'
+
+  if (isApi) {
+    try {
+      await fetch('/api/blogs', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ categories: clean }),
+      })
+    } catch { /* offline — local copy still saved */ }
+  }
+
+  if (renames.length) {
+    const retag = (b) => {
+      const match = renames.find(([from]) => from === b.tag)
+      return match ? { ...b, tag: match[1] } : b
+    }
+    if (!isApi) {
+      saveLocalBlogs(localBlogs().map(retag))
+    } else {
+      try {
+        const res = await fetch('/api/blogs?all=1', { headers: authHeaders() })
+        if (res.ok) {
+          const data = await res.json()
+          for (const b of data.blogs || []) {
+            const next = retag(b)
+            if (next !== b) {
+              await fetch('/api/blogs', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json', ...authHeaders() },
+                body: JSON.stringify({ blog: next }),
+              })
+            }
+          }
+        }
+      } catch { /* leave tags unchanged on failure */ }
+    }
+  }
+
+  if (isApi) lastServerCategories = clean
+  return clean
+}
+
 // ---------- reading ----------
 
 function localBlogs() {
   try {
     const raw = localStorage.getItem(BLOGS_KEY)
-    const parsed = raw ? JSON.parse(raw) : []
-    return Array.isArray(parsed) && parsed.length ? parsed : defaultBlogs
+    if (raw !== null) {
+      // Storage exists — respect it, even when the admin deleted every post.
+      const parsed = JSON.parse(raw)
+      return Array.isArray(parsed) ? parsed : defaultBlogs
+    }
+    // First run: seed storage with the built-in articles so they are
+    // editable/unpublishable in the admin just like any other post.
+    try {
+      localStorage.setItem(BLOGS_KEY, JSON.stringify(defaultBlogs))
+      localStorage.setItem(SEEDED_KEY, '1')
+    } catch { /* storage full — defaults stay read-only */ }
+    return defaultBlogs
   } catch {
     return defaultBlogs
   }
@@ -139,6 +268,7 @@ export async function adminLoadBlogs() {
     const res = await fetch('/api/blogs?all=1', { headers: authHeaders() })
     if (!res.ok) throw new Error('bad status')
     const data = await res.json()
+    if (Array.isArray(data.categories)) lastServerCategories = data.categories
     return Array.isArray(data.blogs) ? data.blogs : []
   } catch {
     return localBlogs()

@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import WaitlistModal from './components/WaitlistModal'
 import Home from './pages/Home'
 import AwarenessPage from './pages/AwarenessPage'
-import ArticlePage from './pages/ArticlePage'
 import BlogPage from './pages/BlogPage'
 import AdminPage from './pages/AdminPage'
 import PrivacyPage from './pages/PrivacyPage'
@@ -26,6 +25,12 @@ function ScrollToTop() {
   return null
 }
 
+// Old hand-written article URLs now resolve to the admin-managed blog pages
+function ArticleRedirect() {
+  const { slug } = useParams()
+  return <Navigate to={`/blogs/${slug}`} replace />
+}
+
 function App() {
   const [modalOpen, setModalOpen] = useState(false)
   const openModal = () => setModalOpen(true)
@@ -40,7 +45,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/awareness" element={<AwarenessPage />} />
-          <Route path="/articles/:slug" element={<ArticlePage openModal={openModal} />} />
+          {/* Old hand-written article URLs now resolve to the admin-managed blog pages */}
+          <Route path="/articles/:slug" element={<ArticleRedirect />} />
           <Route path="/blogs" element={<BlogPage />} />
           <Route path="/blogs/:slug" element={<BlogPage />} />
           <Route path="/admin" element={<AdminPage />} />
