@@ -511,14 +511,27 @@
 .rt-area p { margin-bottom: .625rem; }
 .rt-area p:last-child { margin-bottom: 0; }
 .rt-area h3 { font-size: 1.05rem; font-weight: 800; color: var(--text-1); margin: .75rem 0 .5rem; }
+/* Tailwind preflight resets lists and links — restore them so formatting is
+   visible while editing. */
 .rt-area ul, .rt-area ol { padding-left: 1.4rem; margin-bottom: .625rem; }
+.rt-area ul { list-style: disc outside; }
+.rt-area ol { list-style: decimal outside; }
+.rt-area li { margin-bottom: .35rem; display: list-item; }
+.rt-area a { color: var(--indigo); text-decoration: underline; font-weight: 600; cursor: pointer; }
 .rt-area blockquote { border-left: 3px solid var(--lavender); padding: .35rem .9rem; margin: .5rem 0; color: var(--text-2); background: var(--indigo-dim); border-radius: 0 8px 8px 0; }
 
 /* Rich text rendering (public blog page) */
+.article-body .rt-content { overflow-wrap: break-word; }
 .article-body .rt-content p { margin-bottom: 1.375rem; }
 .article-body .rt-content p:last-child { margin-bottom: 0; }
+/* Tailwind preflight removes list markers — restore them here, and disable the
+   generic lavender-dot bullet so lists don't get two markers. */
 .article-body .rt-content ul, .article-body .rt-content ol { padding-left: 1.25rem; margin-bottom: 1.375rem; }
-.article-body .rt-content ol li { margin-bottom: .5rem; }
+.article-body .rt-content ul { list-style: disc outside; }
+.article-body .rt-content ol { list-style: decimal outside; }
+.article-body .rt-content ul li::before { display: none; }
+.article-body .rt-content li { margin-bottom: .5rem; }
+.article-body .rt-content a { color: var(--indigo); font-weight: 600; text-decoration: underline; }
 .article-body .rt-content h3 { font-size: 1.0625rem; font-weight: 700; color: var(--text-1); margin-top: 1.75rem; margin-bottom: .625rem; }
 .article-body .rt-content h4 { font-size: 1rem; font-weight: 700; color: var(--text-1); margin-top: 1.5rem; margin-bottom: .5rem; }
 .article-body .rt-content blockquote { border-left: 3px solid var(--lavender); padding: 1rem 1.5rem; margin-block: 1.75rem; background: var(--indigo-dim); border-radius: 0 var(--r-md) var(--r-md) 0; }

@@ -12,6 +12,7 @@ import {
   makeVideoPoster,
   loadCategories,
   saveCategories,
+  escapeHtml,
 } from '../utils/blogs'
 
 const FALLBACK_CATEGORIES = ['Understanding Autism', 'Daily Parenting', 'Collaboration', 'Research', 'Wellbeing']
@@ -258,6 +259,11 @@ function RichText({ value, onChange, placeholder }) {
     }
   }, [value])
 
+  // Enter should create clean <p> paragraphs instead of <div>s.
+  useEffect(() => {
+    try { document.execCommand('defaultParagraphSeparator', false, 'p') } catch { /* older browsers */ }
+  }, [])
+
   const emit = () => {
     if (!ref.current) return
     composing.current = true
@@ -271,12 +277,26 @@ function RichText({ value, onChange, placeholder }) {
     emit()
   }
 
+  const normalizeUrl = (url) => {
+    const trimmed = String(url || '').trim()
+    if (!trimmed) return ''
+    if (/^(https?:|mailto:|tel:|\/|#)/i.test(trimmed)) return trimmed
+    return `https://${trimmed.replace(/^\/+/, '')}`
+  }
+
   const makeLink = () => {
+    ref.current?.focus()
     const sel = window.getSelection()
-    if (!sel || sel.isCollapsed) return
-    const url = window.prompt('Link URL (https://…)')
-    if (!url) return
-    document.execCommand('createLink', false, url)
+    if (!sel) return
+    const url = window.prompt('Link URL (e.g. www.example.com or https://example.com)')
+    const safe = normalizeUrl(url)
+    if (!safe) return
+    if (sel.isCollapsed) {
+      // No selection: insert the URL itself as clickable text.
+      document.execCommand('insertHTML', false, `<a href="${safe}" target="_blank" rel="noopener noreferrer">${escapeHtml(safe)}</a>`)
+    } else {
+      document.execCommand('createLink', false, safe)
+    }
     // Sanitize fresh links immediately.
     ref.current?.querySelectorAll('a').forEach((a) => {
       a.setAttribute('target', '_blank')

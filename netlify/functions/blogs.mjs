@@ -46,6 +46,24 @@ const readIndex = async (store) => {
 
 const writeIndex = (store, index) => store.setJSON('index', index)
 
+// One-time migration: any launch article missing from the stored index gets
+// merged in, so the complete article set appears in (and is managed by) the
+// admin even when real posts were saved before the seed system existed.
+const mergeSeeds = async (store, index) => {
+  const existing = new Set(index.blogs.map((b) => b.slug))
+  const missing = defaultBlogs.filter((b) => !existing.has(b.slug))
+  if (!missing.length) return index
+  const cats = new Set(index.categories || [])
+  for (const b of missing) if (b.tag) cats.add(b.tag)
+  const merged = { ...index, blogs: [...index.blogs, ...missing], categories: [...cats] }
+  try {
+    await writeIndex(store, merged)
+  } catch {
+    /* best-effort — still serve the merged list */
+  }
+  return merged
+}
+
 const validBlog = (b) =>
   b &&
   typeof b.slug === 'string' &&
@@ -62,7 +80,7 @@ export default async (req) => {
   if (method === 'GET') {
     const wantsAll = url.searchParams.get('all') === '1'
     if (wantsAll && !authorized(req)) return json({ error: 'Unauthorized' }, 401)
-    const index = await readIndex(store)
+    const index = await mergeSeeds(store, await readIndex(store))
     const blogs = wantsAll ? index.blogs : index.blogs.filter((b) => b.published !== false)
     const used = [...new Set(blogs.map((b) => b.tag).filter(Boolean))]
     const categories = index.categories.length ? index.categories : used.length ? used : DEFAULT_CATEGORIES

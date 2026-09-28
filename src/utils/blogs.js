@@ -122,6 +122,10 @@ const ALLOWED_ATTRS = {
   span: ['class'],
 }
 
+// True when a stored text value looks like HTML rather than plain text
+// (older posts saved plain text without the html flag).
+export const looksLikeHtml = (value) => /<\/?[a-z][^>]*>/i.test(String(value ?? ''))
+
 // Whitelist-based HTML sanitizer for rich-text blocks. Everything the admin
 // toolbar produces passes through; scripts, styles and unknown tags do not.
 export function sanitizeHtml(html) {
@@ -146,6 +150,9 @@ export function sanitizeHtml(html) {
         if (!allowed || unsafe) child.removeAttribute(attr.name)
       }
       if (tag === 'a') {
+        // Fix schemeless links ("www.example.com") so they leave the site.
+        const href = child.getAttribute('href') || ''
+        if (href && !/^(https?:|mailto:|tel:|\/|#)/i.test(href)) child.setAttribute('href', `https://${href.replace(/^\/+/, '')}`)
         child.setAttribute('rel', 'noopener noreferrer')
         if (!child.getAttribute('target')) child.setAttribute('target', '_blank')
       }
@@ -154,6 +161,29 @@ export function sanitizeHtml(html) {
     }
   }
   walk(doc.body)
+
+  // ContentEditable artefacts: paragraphs nested in paragraphs (<p><p>…</p></p>)
+  // from paste/enter behaviour, and empty <p></p>/<p><br></p> leftovers.
+  const fixNesting = () => {
+    let changed = false
+    for (const p of [...doc.body.querySelectorAll('p')]) {
+      if (p.querySelector(':scope > p')) {
+        p.replaceWith(...p.childNodes)
+        changed = true
+        continue
+      }
+      const text = p.textContent.trim()
+      const onlyBr = p.children.length === 1 && p.children[0].tagName === 'BR'
+      if (!text && (!p.children.length || onlyBr)) {
+        p.remove()
+        changed = true
+      }
+    }
+    return changed
+  }
+  let guard = 0
+  while (fixNesting() && guard++ < 20) { /* keep unwrapping until stable */ }
+
   return doc.body.innerHTML
 }
 

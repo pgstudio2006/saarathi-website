@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Navigate } from 'react-router-dom'
-import { getBlog, loadBlogs, loadCategories, sanitizeHtml } from '../utils/blogs'
+import { getBlog, loadBlogs, loadCategories, sanitizeHtml, looksLikeHtml } from '../utils/blogs'
 
 function BlogCard({ blog, onClick }) {
   return (
@@ -89,7 +89,12 @@ function BlogDetail({ slug }) {
             {(blog.blocks || []).map((block, i) => {
               if (block.type === 'heading') return <h2 key={i}>{block.value}</h2>
               if (block.type === 'text') {
-                if (block.html) return <div key={i} className="rt-content" dangerouslySetInnerHTML={{ __html: sanitizeHtml(block.value) }} />
+                // Render as rich HTML whenever the value contains markup —
+                // covers both new blocks (html: true) and older saved posts
+                // whose flag was lost. Plain text keeps its line breaks.
+                if (block.html || looksLikeHtml(block.value)) {
+                  return <div key={i} className="rt-content" dangerouslySetInnerHTML={{ __html: sanitizeHtml(block.value) }} />
+                }
                 const parts = String(block.value || '').split(/\n+/).filter(Boolean)
                 return parts.map((p, j) => <p key={`${i}-${j}`}>{p}</p>)
               }
