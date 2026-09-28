@@ -53,33 +53,46 @@ async function detectStrategy() {
 // development password when no real backend exists behind /api (plain
 // `vite dev` has no serverless functions, so /api/* returns 404/500 with a
 // non-JSON body). A JSON response with { blogs } means a real API is live.
+// The local dev password only applies on a developer machine — never on the
+// deployed site, so production always reports server problems honestly.
+const isLocalHost =
+  typeof window !== 'undefined' && /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname)
+
 export async function loginAdmin(password) {
+  let res
   try {
-    const res = await fetch('/api/blogs?all=1', { headers: { 'x-admin-key': password } })
-    const isJson = (res.headers.get('content-type') || '').toLowerCase().includes('application/json')
-    if (isJson) {
-      const data = await res.json().catch(() => null)
-      if (data && Array.isArray(data.blogs)) {
-        sessionStorage.setItem(KEY_STORAGE, password)
-        sessionStorage.setItem(MODE_STORAGE, 'api')
-        const strategy = await detectStrategy()
-        if (strategy) sessionStorage.setItem(STRATEGY_STORAGE, strategy)
-        else sessionStorage.removeItem(STRATEGY_STORAGE)
-        return { ok: true, mode: 'api' }
-      }
-      if (data && data.error) return { ok: false, error: data.error === 'Unauthorized' ? 'Wrong password. Try again.' : data.error }
-      return { ok: false, error: 'Server error — please try again.' }
-    }
-    // Non-JSON body: no backend behind /api here (bare `vite dev`).
+    res = await fetch('/api/blogs?all=1', { headers: { 'x-admin-key': password } })
   } catch {
-    /* network error — continue to the local password check below */
+    if (isLocalHost && password === LOCAL_PASSWORD) {
+      sessionStorage.setItem(KEY_STORAGE, password)
+      sessionStorage.setItem(MODE_STORAGE, 'local')
+      return { ok: true, mode: 'local' }
+    }
+    return { ok: false, error: 'Could not reach the server — check your connection.' }
   }
-  if (password === LOCAL_PASSWORD) {
+
+  const isJson = (res.headers.get('content-type') || '').toLowerCase().includes('application/json')
+  if (isJson) {
+    const data = await res.json().catch(() => null)
+    if (data && Array.isArray(data.blogs)) {
+      sessionStorage.setItem(KEY_STORAGE, password)
+      sessionStorage.setItem(MODE_STORAGE, 'api')
+      const strategy = await detectStrategy()
+      if (strategy) sessionStorage.setItem(STRATEGY_STORAGE, strategy)
+      else sessionStorage.removeItem(STRATEGY_STORAGE)
+      return { ok: true, mode: 'api' }
+    }
+    if (data && data.error) return { ok: false, error: data.error === 'Unauthorized' ? 'Wrong password. Try again.' : data.error }
+    return { ok: false, error: 'Server error — please try again.' }
+  }
+
+  // Non-JSON body: only normal on a bare `vite dev` server with no functions.
+  if (isLocalHost && password === LOCAL_PASSWORD) {
     sessionStorage.setItem(KEY_STORAGE, password)
     sessionStorage.setItem(MODE_STORAGE, 'local')
     return { ok: true, mode: 'local' }
   }
-  return { ok: false, error: 'Could not reach the server.' }
+  return { ok: false, error: 'Server error — please try again in a minute.' }
 }
 
 const authHeaders = () => {
