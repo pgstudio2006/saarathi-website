@@ -4,7 +4,7 @@
 // (ArticlePage) that the admin panel could not see, edit, unpublish or delete.
 // They are converted here into the same "blog" shape the admin publishes, so
 // they are seeded into storage on first run and become fully manageable.
-import { articles } from './articles'
+import { articles } from './articles.js'
 
 const toBlog = (a) => ({
   slug: a.slug,
