@@ -207,7 +207,8 @@ export default function PrivacyPage({ openModal }) {
                 Waitlist emails are kept until the first of the following happens: (a) you ask us to delete them,
                 (b) you ask us to stop contacting you, or (c) the waitlist is retired — after which the entries are
                 deleted. Technical logs from our hosting provider are kept only for the short, fixed period the
-                provider defines.
+                provider defines. Step-by-step deletion instructions live on our <a href="/data-deletion">Data
+                Deletion page</a>.
               </p>
               <p>
                 When we delete, we delete. There are no ghost copies of your email floating around an advertising
